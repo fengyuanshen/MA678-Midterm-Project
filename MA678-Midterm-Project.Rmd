@@ -9,24 +9,77 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-listings <- read.csv("data/listings.csv", header = T)
-calendar <- read.csv("data/calendar.csv", header = T)
-reviews <- read.csv("data/reviews.csv", header = T)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(stringr)
+library(kableExtra)
 ```
-
 
 ```{r}
-list<- read.csv("listings.csv",header = T)
+listings <- read.csv("data/listings.csv", header = T)
+# calendar <- read.csv("data/calendar.csv", header = T)
+# reviews <- read.csv("data/reviews.csv", header = T)
 ```
 
-## R Markdown
+```{r}
+kable(head(listings[,c(1:3,5:7)]))
+```
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r}
+# 数据清理
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# 处理缺失值
+listings_data <- listings %>% drop_na(price)
 
-```{r cars}
-summary(cars)
+# 格式化和类型转换
+listings_data$price <- as.numeric(str_replace_all(listings_data$price, "\\$", ""))
+
+# 移除重复数据
+listings_data <- distinct(listings_data)
+
+# 处理价格中的异常值
+Q1 <- quantile(listings_data$price, 0.25)
+Q3 <- quantile(listings_data$price, 0.75)
+IQR <- Q3 - Q1
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+cleaned_data <- listings_data %>% filter(price >= lower_bound & price <= upper_bound)
+```
+
+```{r}
+# 数据可视化
+
+# 地理位置与价格关系散点图
+ggplot(cleaned_data, aes(x=longitude, y=latitude, color=price)) +
+  geom_point(alpha=0.5) +
+  scale_color_gradient(low="blue", high="red") +
+  theme_minimal() +
+  labs(title="Geographic Location vs. Price of Airbnb Listings in Los Angeles",
+       x="Longitude", y="Latitude")
+```
+
+```{r}
+# 房源类型分布条形图
+# 确保数据集中存在 'room_type' 列
+if ("room_type" %in% names(cleaned_data)) {
+  ggplot(cleaned_data, aes(x=room_type)) +
+    geom_bar() +
+    theme_minimal() +
+    labs(title="Distribution of Room Types in Airbnb Listings",
+         x="Room Type", y="Number of Listings")
+}
+```
+
+```{r}
+
+# 多变量分析
+# 选择适合多变量分析的列
+variables_for_pairplot <- c("price", "latitude", "longitude", "number_of_reviews", "review_scores_rating")
+cleaned_data %>%
+  select(all_of(variables_for_pairplot)) %>%
+  drop_na() %>%
+  GGally::ggpairs()
 ```
 
 ## Including Plots
