@@ -1,7 +1,7 @@
 ---
 title: "MA678-Midterm-Project"
 output: pdf_document
-date: "2023-11-09"
+date: "2023-12-09"
 ---
 
 ```{r setup, include=FALSE}
@@ -22,15 +22,22 @@ listings <- read.csv("data/listings.csv", header = T)
 # reviews <- read.csv("data/reviews.csv", header = T)
 ```
 
+## Data Cleaning
+
 ```{r}
-kable(head(listings[,c(1:3,5:7)]))
+listings_data <- listings |> 
+  select(id, host_id, host_name, host_since, host_response_time, host_response_rate,
+         host_acceptance_rate, host_is_superhost, host_listings_count, 
+         host_identity_verified, latitude, longitude, property_type, room_type,
+         accommodates, bathrooms_text, bedrooms, beds, price, minimum_nights,
+         maximum_nights, number_of_reviews, review_scores_rating, review_scores_accuracy,
+         review_scores_cleanliness, review_scores_checkin, review_scores_communication,
+         review_scores_location, review_scores_value, instant_bookable)
 ```
 
-```{r}
-# 数据清理
-
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # 处理缺失值
-listings_data <- listings %>% drop_na(price)
+listings_data <- listings_data |> drop_na(price)
 
 # 格式化和类型转换
 listings_data$price <- as.numeric(str_replace_all(listings_data$price, "\\$", ""))
@@ -39,12 +46,18 @@ listings_data$price <- as.numeric(str_replace_all(listings_data$price, "\\$", ""
 listings_data <- distinct(listings_data)
 
 # 处理价格中的异常值
-Q1 <- quantile(listings_data$price, 0.25)
-Q3 <- quantile(listings_data$price, 0.75)
+Q1 <- quantile(listings_data$price, 0.25, na.rm = TRUE)
+Q3 <- quantile(listings_data$price, 0.75, na.rm = TRUE)
 IQR <- Q3 - Q1
 lower_bound <- Q1 - 1.5 * IQR
 upper_bound <- Q3 + 1.5 * IQR
 cleaned_data <- listings_data %>% filter(price >= lower_bound & price <= upper_bound)
+```
+
+## Heat Map
+
+```{r}
+kable(head(listings[,c(1:3,5:7)]))
 ```
 
 ```{r}
