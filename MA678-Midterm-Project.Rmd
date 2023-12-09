@@ -1,6 +1,9 @@
 ---
 title: "MA678-Midterm-Project"
-output: pdf_document
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+author: Fengyuan Shen (Vincent)
 date: "2023-12-09"
 ---
 
@@ -8,7 +11,13 @@ date: "2023-12-09"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+## Abstract
+
+## Introduction
+
+## Method
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ggplot2)
 library(lubridate)
@@ -16,15 +25,15 @@ library(stringr)
 library(kableExtra)
 ```
 
-```{r}
+```{r echo=FALSE}
 listings <- read.csv("data/listings.csv", header = T)
 # calendar <- read.csv("data/calendar.csv", header = T)
 # reviews <- read.csv("data/reviews.csv", header = T)
 ```
 
-## Data Cleaning
+### Data Cleaning
 
-```{r}
+```{r echo=FALSE}
 listings_data <- listings |> 
   select(id, host_id, host_name, host_since, host_response_time, host_response_rate,
          host_acceptance_rate, host_is_superhost, host_listings_count, 
@@ -35,30 +44,46 @@ listings_data <- listings |>
          review_scores_location, review_scores_value, instant_bookable)
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-# 处理缺失值
-listings_data <- listings_data |> drop_na(price)
+```{r echo=FALSE}
+kable(head(listings_data[,c(3,4,16:19,23)]))
+```
 
-# 格式化和类型转换
-listings_data$price <- as.numeric(str_replace_all(listings_data$price, "\\$", ""))
+```{r echo=FALSE}
+summary(listings_data)
+```
 
-# 移除重复数据
-listings_data <- distinct(listings_data)
+```{r}
+# Price
+# Omit missing values
+listings_data <- na.omit(listings_data)
 
-# 处理价格中的异常值
-Q1 <- quantile(listings_data$price, 0.25, na.rm = TRUE)
-Q3 <- quantile(listings_data$price, 0.75, na.rm = TRUE)
+# Converts the data format of the Price column
+listings_data$price <- as.numeric(str_replace_all(listings_data$price, "[^0-9.]", ""))
+
+# Remove outliers in the Price column
+Q1 <- quantile(listings_data$price, 0.25)
+Q3 <- quantile(listings_data$price, 0.75)
 IQR <- Q3 - Q1
 lower_bound <- Q1 - 1.5 * IQR
 upper_bound <- Q3 + 1.5 * IQR
-cleaned_data <- listings_data %>% filter(price >= lower_bound & price <= upper_bound)
+listings_data <- listings_data |> filter(price >= lower_bound & price <= upper_bound)
 ```
-
-## Heat Map
 
 ```{r}
-kable(head(listings[,c(1:3,5:7)]))
+# Host response
+listings_data <- listings_data |> 
+  mutate(host_response_time = case_when(
+    host_response_time == "within an hour" ~ 0,
+    host_response_time == "within a few hours" ~ 1,
+    host_response_time  == "a few days or more" ~ 2,
+    TRUE ~ NA  # If neither match, set the column to NA
+  )) |> 
+  filter(!is.na(host_response_time))  # Filter out rows with NA values
 ```
+
+### Heat Map
+
+### EDA
 
 ```{r}
 # 数据可视化
@@ -85,7 +110,6 @@ if ("room_type" %in% names(cleaned_data)) {
 ```
 
 ```{r}
-
 # 多变量分析
 # 选择适合多变量分析的列
 variables_for_pairplot <- c("price", "latitude", "longitude", "number_of_reviews", "review_scores_rating")
@@ -95,12 +119,12 @@ cleaned_data %>%
   GGally::ggpairs()
 ```
 
-## Including Plots
+### Fitting Model
 
-You can also embed plots, for example:
+#### Model1: Linear Regression
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+## Result
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Discussion
+
+## Appendix
