@@ -20,15 +20,28 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ggplot2)
+library(reshape2)
 library(lubridate)
 library(stringr)
 library(kableExtra)
 ```
 
 ```{r echo=FALSE}
-listings <- read.csv("data/listings.csv", header = T)
+# listings <- read.csv("data/listings.csv", header = T)
 # calendar <- read.csv("data/calendar.csv", header = T)
 # reviews <- read.csv("data/reviews.csv", header = T)
+```
+
+```{r echo=FALSE}
+# Combine data
+file_list <- list.files(path = "listings_data", pattern = "*.csv", full.names = TRUE)
+combined_data <- bind_rows(lapply(file_list, read.csv))
+write.csv(combined_data, "listings_data/listings.csv", row.names = FALSE)
+```
+
+```{r echo=FALSE}
+# read csv
+listings <- read.csv("data/listings.csv", header = T)
 ```
 
 ### Data Cleaning
@@ -52,7 +65,7 @@ kable(head(listings_data[,c(3,4,16:19,23)]))
 summary(listings_data)
 ```
 
-```{r}
+```{r echo=FALSE}
 # Price
 # Omit missing values
 listings_data <- na.omit(listings_data)
@@ -69,8 +82,9 @@ upper_bound <- Q3 + 1.5 * IQR
 listings_data <- listings_data |> filter(price >= lower_bound & price <= upper_bound)
 ```
 
-```{r}
+```{r echo=FALSE}
 # Host response
+# Converts categorical variables to numeric types
 listings_data <- listings_data |> 
   mutate(host_response_time = case_when(
     host_response_time == "within an hour" ~ 0,
@@ -78,12 +92,65 @@ listings_data <- listings_data |>
     host_response_time  == "a few days or more" ~ 2,
     TRUE ~ NA  # If neither match, set the column to NA
   )) |> 
-  filter(!is.na(host_response_time))  # Filter out rows with NA values
+  filter(!is.na(host_response_time)) # Filter out rows with NA values
 ```
 
-### Heat Map
+```{r echo=FALSE}
+# Host is superhost
+listings_data <- listings_data |> filter(host_is_superhost %in% c('f','t'))
+# Converts categorical variables to numeric types
+listings_data$host_is_superhost <- ifelse(listings_data$host_is_superhost == 'f', 0, 1)
+```
+
+```{r echo=FALSE}
+# Host identify verified
+listings_data <- listings_data |> filter(host_identity_verified %in% c('f','t'))
+# Converts categorical variables to numeric types
+listings_data$host_identity_verified <- ifelse(listings_data$host_identity_verified == 'f',
+                                               0, 1)
+```
+
+```{r echo=FALSE}
+# Instant bookable
+listings_data <- listings_data |> filter(instant_bookable %in% c('f','t'))
+# Converts categorical variables to numeric types
+listings_data$instant_bookable <- ifelse(listings_data$instant_bookable == 'f', 0, 1)
+```
+
+```{r echo=FALSE, warning=FALSE}
+# Converts a percentage string to a numeric type
+listings_data$host_response_rate <- 
+  as.numeric(sub("%", "", listings_data$host_response_rate)) / 100
+listings_data$host_acceptance_rate <- 
+  as.numeric(sub("%", "", listings_data$host_acceptance_rate)) / 100
+listings_data <- drop_na(listings_data, host_response_rate, host_acceptance_rate)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# write.csv(listings_data, "listings_data.csv")
+```
 
 ### EDA
+
+```{r}
+# Heatmap
+
+# 选择数值型列进行相关性分析
+numeric_data <- data[sapply(data, is.numeric)]
+
+# 计算相关矩阵
+correlation_matrix <- cor(numeric_data, use="complete.obs")
+
+# 绘制热图
+melted_correlation <- melt(correlation_matrix)
+ggplot(data = melted_correlation, aes(Var1, Var2, fill = value)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                         midpoint = 0, limit = c(-1,1)) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = "Correlation Matrix of Selected Variables", x = '', y = '')
+```
 
 ```{r}
 # 数据可视化
