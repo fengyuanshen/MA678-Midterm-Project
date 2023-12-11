@@ -23,6 +23,7 @@ library(ggplot2)
 library(leaflet)
 library(ggmap)
 library(reshape2)
+library(gridExtra)
 library(lubridate)
 library(stringr)
 library(kableExtra)
@@ -251,7 +252,7 @@ los_angeles_map <- get_stadiamap(bbox = c(left = -118.55, bottom = 33.95, right 
 ```{r echo=FALSE,warning=FALSE}
 ggmap(los_angeles_map) +
   geom_point(data = listings_data, aes(x = longitude, y = latitude, color = price), 
-             size = 1.5, alpha = 0.6) +
+             size = 1.5, alpha = 0.7) +
   scale_color_gradientn(colors = rev(RColorBrewer::brewer.pal(11, "RdYlBu"))) +
   labs(
     title = "Geographic Distribution of Listings Price in Los Angeles",
@@ -298,41 +299,153 @@ ggplot(listings_data, aes(x = room_type, y = price, fill = room_type)) +
   )
 ```
 
-```{r}
-# 散点图
-ggplot(data, aes(x = accommodates, y = price)) +
-  geom_point() +
-  labs(title = "Price vs Accommodates", x = "Accommodates", y = "Price")
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+# Price vs Accommodates
+p1 <- ggplot(listings_data, aes(x = accommodates, y = price)) +
+  geom_point(color = "#003049", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#FFBD00") +  # Add a linear model trendline
+  labs(title = "Price vs Accommodates", x = "Accommodates", y = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+# Price vs Bathrooms
+p2 <- ggplot(listings_data, aes(x = bathrooms, y = price)) +
+  geom_point(color = "#D62828",alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#023E8A") +
+  labs(title = "Price vs Bathrooms", x = "Bathrooms", y = "Price") +
+  ylim(c(0, 700)) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+# Price vs Bedrooms
+p3 <- ggplot(listings_data, aes(x = bedrooms, y = price)) +
+  geom_point(color = "#F77F00", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#C1121F") +
+  labs(title = "Price vs Bedrooms", x = "Bedrooms", y = "Price") +
+  xlim(c(0, 20)) +
+  ylim(c(0, 700)) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+# Price vs Beds
+p4 <- ggplot(listings_data, aes(x = beds, y = price)) +
+  geom_point(color = "#FCBF49", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#6A994E") +
+  labs(title = "Price vs Beds", x = "Beds", y = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+```{r fig.width=8,fig.height=6,echo=FALSE,message=FALSE,warning=FALSE}
+grid.arrange(p1, p2, p3, p4, nrow = 2)
 ```
 
 看一下评分数量的分布，来决定评分是否可以作为预测价格的指标
 
-```{r}
-# 评分分布（箱形图）
-ggplot(listings_data, aes(x = review_scores_rating)) +
-  geom_boxplot(fill = "yellow", color = "black") +
-  labs(title = "Review Scores Rating Distribution", x = "Review Scores Rating", y = "Count") +
-  theme_minimal()
-```
-
-```{r}
-# 房东的响应时间和接受率（条形图）
-ggplot(listings_data, aes(x = host_response_time, y = as.numeric(gsub("%", "", host_acceptance_rate)))) +
-  geom_bar(stat = "identity", fill = "green", color = "black") +
-  labs(title = "Host Response Time vs Acceptance Rate", x = "Host Response Time", y = "Acceptance Rate (%)") +
-  theme_minimal()
-```
-
-```{r}
-# 数据可视化
-
-# 地理位置与价格关系散点图
-ggplot(listings_data, aes(x=longitude, y=latitude, color=price)) +
-  geom_point(alpha=0.5) +
-  scale_color_gradient(low="blue", high="red") +
+```{r echo=FALSE,warning=FALSE}
+# Distribution for Number of Reviews
+ggplot(listings_data, aes(x = number_of_reviews)) +
+  geom_histogram(binwidth = 20, fill = "#DA2C38", color = "black") +
+  geom_density(aes(y = after_stat(count) * 10), color = "#226F54", linewidth = 1) +
+  xlim(c(0,500)) +
+  ylim(c(0,4000)) +
+  labs(title = "Distribution for Number of Reviews", x = "Number of Reviews", y = "Count") +
   theme_minimal() +
-  labs(title="Geographic Location vs. Price of Airbnb Listings in Los Angeles",
-       x="Longitude", y="Latitude")
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+画一张评分和价格的关系图
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+# Price vs Overall Rating
+p5 <- ggplot(listings_data, aes(x = review_scores_rating, y = price)) +
+  geom_point(color = "#003049", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#FFBD00") +  # Add a linear model trendline
+  labs(title = "Price vs Overall Rating", x = "Overall Rating", y = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Price vs Accuray Rating
+p6 <- ggplot(listings_data, aes(x = review_scores_accuracy, y = price)) +
+  geom_point(color = "#D62828",alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#023E8A") +
+  labs(title = "Price vs Accuray Rating", x = "Accuray Rating", y = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Price vs Cleanliness Rating
+p7 <- ggplot(listings_data, aes(x = review_scores_cleanliness, y = price)) +
+  geom_point(color = "#F77F00", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#C1121F") +
+  labs(title = "Price vs Cleanliness Rating", x = "Cleanliness Rating", y = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Price vs Checkin Rating
+p8 <- ggplot(listings_data, aes(x = review_scores_checkin, y = price)) +
+  geom_point(color = "#FCBF49", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#6A994E") +
+  labs(title = "Price vs Checkin Rating", x = "Checkin Rating", y = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Price vs Communication Rating
+p9 <- ggplot(listings_data, aes(x = review_scores_communication, y = price)) +
+  geom_point(color = "#226F54", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#DA2C38") +
+  labs(title = "Price vs Communication Rating", x = "Communication Rating", y = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Price vs Location Rating
+p10 <- ggplot(listings_data, aes(x = review_scores_location, y = price)) +
+  geom_point(color = "#5E548E", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#9E2A2B") +
+  labs(title = "Price vs Location Rating", x = "Location Rating", y = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Price vs Value Rating
+p11 <- ggplot(listings_data, aes(x = review_scores_value, y = price)) +
+  geom_point(color = "#FFD60A", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "#003566") +
+  labs(title = "Price vs Value Rating", x = "Value Rating", y = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+```{r fig.width=8,fig.height=14,echo=FALSE,message=FALSE,warning=FALSE}
+grid.arrange(p5, p6, p7, p8, p9, p10, p11, ncol = 2)
 ```
 
 ### Fitting Model
