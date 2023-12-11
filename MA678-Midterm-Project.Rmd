@@ -188,7 +188,7 @@ listings_data <- listings_data |>
 
 ### EDA
 
-```{r echo=FALSE}
+```{r fig.width=7,fig.height=6,echo=FALSE}
 # Heatmap
 # Select numerical columns for correlation analysis
 numeric_data <- listings_data[, c('host_response_time', 'host_response_rate',
@@ -209,7 +209,7 @@ correlation_matrix <- cor(numeric_data, use="complete.obs")
 melted_correlation <- melt(correlation_matrix)
 ggplot(data = melted_correlation, aes(Var1, Var2, fill = value)) +
     geom_tile() +
-    geom_text(aes(label = sprintf("%.2f", value)), size = 1.5, vjust = 0.5) +
+    geom_text(aes(label = sprintf("%.2f", value)), size = 1.7, vjust = 0.5) +
     scale_fill_gradientn(colours = c("#03045E", "#023E8A", "#277DA1", "#577590", "#4D908E",
                                      "#43AA8B", "#90BE6D", "#F9C74F", "#F9844A", "#F8961E",
                                      "#F3722C", "#F94144", "#DC2F02", "#D00000"),
@@ -444,13 +444,26 @@ p11 <- ggplot(listings_data, aes(x = review_scores_value, y = price)) +
   )
 ```
 
-```{r fig.width=8,fig.height=14,echo=FALSE,message=FALSE,warning=FALSE}
+```{r fig.width=8,fig.height=12,echo=FALSE,message=FALSE,warning=FALSE}
 grid.arrange(p5, p6, p7, p8, p9, p10, p11, ncol = 2)
 ```
 
 ### Fitting Model
 
-#### Model1: Linear Regression
+#### Model1: Null Model
+
+```{r}
+
+```
+
+#### Model2: Linear Regression
+
+```{r echo=FALSE}
+fit1 <- lm(price ~ host_is_superhost + latitude + longitude + room + accommodates + 
+             bathrooms + bedrooms + beds + minimum_nights + number_of_reviews +
+             review_scores_rating + review_scores_location, data = listings_data)
+summary(fit1)
+```
 
 #### Residual plot
 
