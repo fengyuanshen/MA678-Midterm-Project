@@ -20,6 +20,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ggplot2)
+library(leaflet)
+library(ggmap)
 library(reshape2)
 library(lubridate)
 library(stringr)
@@ -34,9 +36,9 @@ library(kableExtra)
 
 ```{r echo=FALSE}
 # Combine data
-file_list <- list.files(path = "listings_data", pattern = "*.csv", full.names = TRUE)
-combined_data <- bind_rows(lapply(file_list, read.csv))
-write.csv(combined_data, "listings_data/listings.csv", row.names = FALSE)
+# file_list <- list.files(path = "listings_data", pattern = "*.csv", full.names = TRUE)
+# combined_data <- bind_rows(lapply(file_list, read.csv))
+# write.csv(combined_data, "listings_data/listings.csv", row.names = FALSE)
 ```
 
 ```{r echo=FALSE}
@@ -82,6 +84,8 @@ upper_bound <- Q3 + 1.5 * IQR
 listings_data <- listings_data |> filter(price >= lower_bound & price <= upper_bound)
 ```
 
+within an hour = 0, within a few hours = 1, a few days or more = 2.
+
 ```{r echo=FALSE}
 # Host response
 # Converts categorical variables to numeric types
@@ -95,12 +99,16 @@ listings_data <- listings_data |>
   filter(!is.na(host_response_time)) # Filter out rows with NA values
 ```
 
+f = 0, t = 1.
+
 ```{r echo=FALSE}
 # Host is superhost
 listings_data <- listings_data |> filter(host_is_superhost %in% c('f','t'))
 # Converts categorical variables to numeric types
 listings_data$host_is_superhost <- ifelse(listings_data$host_is_superhost == 'f', 0, 1)
 ```
+
+f = 0, t = 1.
 
 ```{r echo=FALSE}
 # Host identify verified
@@ -109,6 +117,8 @@ listings_data <- listings_data |> filter(host_identity_verified %in% c('f','t'))
 listings_data$host_identity_verified <- ifelse(listings_data$host_identity_verified == 'f',
                                                0, 1)
 ```
+
+f = 0, t = 1.
 
 ```{r echo=FALSE}
 # Instant bookable
@@ -126,37 +136,198 @@ listings_data$host_acceptance_rate <-
 listings_data <- drop_na(listings_data, host_response_rate, host_acceptance_rate)
 ```
 
+```{r echo=FALSE}
+# Bathrooms text
+listings_data <- listings_data |> 
+  mutate(bathrooms = case_when(
+    bathrooms_text %in% c("Half-bath", "Shared half-bath") ~ 0.5,
+    bathrooms_text %in% c("1 bath", "1 shared bath", "1 private bath") ~ 1,
+    bathrooms_text %in% c("1.5 baths", "1.5 shared baths") ~ 1.5,
+    bathrooms_text %in% c("2 baths", "2 shared baths") ~ 2,
+    bathrooms_text %in% c("2.5 baths") ~ 2.5,
+    bathrooms_text %in% c("3 baths", "3 shared baths") ~ 3,
+    bathrooms_text %in% c("3.5 baths", "3.5 shared baths") ~ 3.5,
+    bathrooms_text %in% c("4 baths") ~ 4,
+    bathrooms_text %in% c("4.5 baths") ~ 4.5,
+    bathrooms_text %in% c("5 baths") ~ 5,
+    bathrooms_text %in% c("5.5 baths") ~ 5.5,
+    bathrooms_text %in% c("6 baths") ~ 6,
+    bathrooms_text %in% c("7 baths") ~ 7,
+    bathrooms_text %in% c("7.5 baths") ~ 7.5,
+    bathrooms_text %in% c("8 baths") ~ 8,
+    bathrooms_text %in% c("11 baths", "11 shared baths", "11.5 shared baths") ~ 11,
+    bathrooms_text %in% c("11.5 shared baths") ~ 11.5,
+    TRUE ~ NA_real_  # For other values, set to NA
+  )) |> 
+  filter(!is.na(bathrooms)) |>   # Remove rows with NA in bathrooms
+  # Keep bathrooms column after bathrooms_text
+  relocate(bathrooms, .after = bathrooms_text) |>   
+  select(-bathrooms_text)  # Remove the old bathrooms_text column
+```
+
+Entire home/apt = 0, Private room = 1, Hotel room = 2.
+
+```{r echo=FALSE}
+# Room type
+listings_data <- listings_data |> 
+  mutate(room = case_when(
+    room_type %in% c("Entire home/apt") ~ 0,
+    room_type %in% c("Private room") ~ 1,
+    room_type %in% c("Hotel room") ~ 2,
+    TRUE ~ NA_real_  # For other values, set to NA
+  )) |> 
+  filter(!is.na(room)) |>  # Remove rows with NA in room_type
+  # Keep room column after bathrooms_text
+  relocate(room, .after = room_type)
+```
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # write.csv(listings_data, "listings_data.csv")
 ```
 
 ### EDA
 
-```{r}
+```{r echo=FALSE}
 # Heatmap
+# Select numerical columns for correlation analysis
+numeric_data <- listings_data[, c('host_response_time', 'host_response_rate',
+                                  'host_acceptance_rate', 'host_is_superhost',
+                                  'host_listings_count', 'host_identity_verified',
+                                  'latitude', 'longitude', 'room', 'accommodates',
+                                  'bathrooms', 'bedrooms', 'beds', 'price', 'minimum_nights',
+                                  'maximum_nights', 'number_of_reviews', 
+                                  'review_scores_rating', 'review_scores_accuracy',
+                                  'review_scores_cleanliness', 'review_scores_checkin',
+                                  'review_scores_communication', 'review_scores_location',
+                                  'review_scores_value', 'instant_bookable')]
 
-# 选择数值型列进行相关性分析
-numeric_data <- data[sapply(data, is.numeric)]
-
-# 计算相关矩阵
+# Correlation matrix
 correlation_matrix <- cor(numeric_data, use="complete.obs")
 
-# 绘制热图
+# Heatmap
 melted_correlation <- melt(correlation_matrix)
 ggplot(data = melted_correlation, aes(Var1, Var2, fill = value)) +
     geom_tile() +
-    scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                         midpoint = 0, limit = c(-1,1)) +
+    geom_text(aes(label = sprintf("%.2f", value)), size = 1.5, vjust = 0.5) +
+    scale_fill_gradientn(colours = c("#03045E", "#023E8A", "#277DA1", "#577590", "#4D908E",
+                                     "#43AA8B", "#90BE6D", "#F9C74F", "#F9844A", "#F8961E",
+                                     "#F3722C", "#F94144", "#DC2F02", "#D00000"),
+                         limits = c(-1, 1)) +
     theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    labs(title = "Correlation Matrix of Selected Variables", x = '', y = '')
+    labs(title = "Correlation Matrix of Variables", x = '', y = '') +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      axis.text.x = element_text(angle = 45, hjust = 1)
+      )
+```
+
+rate那里无所谓，但是中间那一块感觉会存在共线性问题
+
+另外，相关系数矩阵仅仅表示不同变量之间是否存在线性关系，但有时候关系有可能是非线性的。（比如地理位置和价格）
+
+找找哪些因素和price相关，然后绘制图形：
+
+host_is_superhost, latitude and longitude, room_type, accommodates, bathrooms, bedrooms, beds, minimum_nights, number_of_reviews, review_scores_ratings, review_scores_location
+
+```{r echo=FALSE}
+# Price Distribution
+ggplot(listings_data, aes(x = price)) +
+  geom_histogram(binwidth = 10, fill = "#D62828", color = "black") +
+  geom_density(aes(y = after_stat(count) * 10), color = "#003566", linewidth = 1) +
+  labs(title = "Price Distribution", x = "Price", y = "Frequency") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+# Scatter plot of the relationship between location and price
+register_stadiamaps(key = "5a10d16e-591e-4614-be7c-c5294374aac7")
+los_angeles_map <- get_stadiamap(bbox = c(left = -118.55, bottom = 33.95, right = -118.15, 
+                                          top = 34.25), zoom = 12, maptype = "outdoors")
+```
+
+```{r echo=FALSE,warning=FALSE}
+ggmap(los_angeles_map) +
+  geom_point(data = listings_data, aes(x = longitude, y = latitude, color = price), 
+             size = 1.5, alpha = 0.6) +
+  scale_color_gradientn(colors = rev(RColorBrewer::brewer.pal(11, "RdYlBu"))) +
+  labs(
+    title = "Geographic Distribution of Listings Price in Los Angeles",
+    x = "Longitude", y = "Latitude",
+    color = "Price") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+```{r echo=FALSE}
+# Room Type Distribution
+ggplot(listings_data, aes(reorder(room_type, room_type, function(x) -length(x)), fill = room_type)) +
+  geom_bar(color = "black") +
+  scale_fill_manual(values = c("#D62828", "#F77F00", "#457B9D")) +
+  labs(title = "Room Type Distribution", x = "Room Type", y = "Count") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  ) +
+  geom_text(
+    aes(label = after_stat(count)),
+    stat = "count",
+    position = position_stack(vjust = 0.5),
+    color = c("white", "white", "black"),
+    size = 4.5
+  )
+```
+
+```{r echo=FALSE}
+# Price Distribution of Different Room Types
+# boxplot
+ggplot(listings_data, aes(x = room_type, y = price, fill = room_type)) +
+  geom_boxplot() +
+  # scale_fill_brewer(palette = "Set2") +
+  scale_fill_manual(values = c("#D62828", "#F77F00", "#457B9D")) +
+  theme_minimal() +
+  labs(title = "Price Distribution of Different Room Types",
+       x = "Room Type",
+       y = "Price") +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+```{r}
+# 散点图
+ggplot(data, aes(x = accommodates, y = price)) +
+  geom_point() +
+  labs(title = "Price vs Accommodates", x = "Accommodates", y = "Price")
+```
+
+看一下评分数量的分布，来决定评分是否可以作为预测价格的指标
+
+```{r}
+# 评分分布（箱形图）
+ggplot(listings_data, aes(x = review_scores_rating)) +
+  geom_boxplot(fill = "yellow", color = "black") +
+  labs(title = "Review Scores Rating Distribution", x = "Review Scores Rating", y = "Count") +
+  theme_minimal()
+```
+
+```{r}
+# 房东的响应时间和接受率（条形图）
+ggplot(listings_data, aes(x = host_response_time, y = as.numeric(gsub("%", "", host_acceptance_rate)))) +
+  geom_bar(stat = "identity", fill = "green", color = "black") +
+  labs(title = "Host Response Time vs Acceptance Rate", x = "Host Response Time", y = "Acceptance Rate (%)") +
+  theme_minimal()
 ```
 
 ```{r}
 # 数据可视化
 
 # 地理位置与价格关系散点图
-ggplot(cleaned_data, aes(x=longitude, y=latitude, color=price)) +
+ggplot(listings_data, aes(x=longitude, y=latitude, color=price)) +
   geom_point(alpha=0.5) +
   scale_color_gradient(low="blue", high="red") +
   theme_minimal() +
@@ -164,31 +335,11 @@ ggplot(cleaned_data, aes(x=longitude, y=latitude, color=price)) +
        x="Longitude", y="Latitude")
 ```
 
-```{r}
-# 房源类型分布条形图
-# 确保数据集中存在 'room_type' 列
-if ("room_type" %in% names(cleaned_data)) {
-  ggplot(cleaned_data, aes(x=room_type)) +
-    geom_bar() +
-    theme_minimal() +
-    labs(title="Distribution of Room Types in Airbnb Listings",
-         x="Room Type", y="Number of Listings")
-}
-```
-
-```{r}
-# 多变量分析
-# 选择适合多变量分析的列
-variables_for_pairplot <- c("price", "latitude", "longitude", "number_of_reviews", "review_scores_rating")
-cleaned_data %>%
-  select(all_of(variables_for_pairplot)) %>%
-  drop_na() %>%
-  GGally::ggpairs()
-```
-
 ### Fitting Model
 
 #### Model1: Linear Regression
+
+#### Residual plot
 
 ## Result
 
