@@ -664,6 +664,8 @@ qqline(resid(fit_partial_pooling), col = "#D62828")  # Add a guide line
 
 ## Result Analysis and Discussion
 
+颜色越红，rmse越小
+
 ```{r echo=FALSE}
 # Null Model
 # Predict the response variable of the test set
@@ -682,7 +684,9 @@ ggplot(test_data, aes(x = price, y = test_predictions1, color = RMSE_per_point))
   scale_color_gradientn(colours = c("#D00000", "#DC2F02", "#F9844A", "#F9C74F", "#90BE6D",
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
-  labs(x = "True Value", y = "Predictions", title = "True Values vs Predictions") +
+  labs(
+    title = "True Values vs Predictions - Null Model",
+    x = "True Value", y = "Predictions") +
   geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
   ylim(0, 600) +
   theme_minimal() +
@@ -709,12 +713,58 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_po
   scale_color_gradientn(colours = c("#D00000", "#DC2F02", "#F9844A", "#F9C74F", "#90BE6D",
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
-  labs(x = "True Value", y = "Predictions", title = "True Values vs Predictions") +
+  labs(
+    title = "True Values vs Predictions - Complete Pooling (Linear Regression)",
+    x = "True Value", y = "Predictions"
+    ) +
   geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  ylim(0, 600) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
     )
+```
+
+```{r echo=FALSE}
+# Linear Regression with Interaction Term
+# Predict the response variable of the test set
+test_predictions3 <- predict(fit_lin2, newdata = test_data)
+# RMSE
+rmse3 <- sqrt(mean((log(test_data$price) - test_predictions3)^2))
+```
+
+```{r}
+# Calculate RMSE of each data point
+RMSE_per_point <- sqrt((log(test_data$price) - test_predictions3)^2)
+
+# Scatter plot
+ggplot(test_data, aes(x = price, y = exp(test_predictions3), color = RMSE_per_point)) +
+  geom_point() +
+  scale_color_gradientn(colours = c("#D00000", "#DC2F02", "#F9844A", "#F9C74F", "#90BE6D",
+                                    "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
+                                    "#023E8A", "#013A63", "#012A4A", "#03045E")) +
+  labs(
+    title = "True Values vs Predictions - Linear Regression with Interaction Term",
+    x = "True Value", y = "Predictions"
+    ) +
+  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  ylim(0, 600) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    )
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
 ```
 
 ```{r}
