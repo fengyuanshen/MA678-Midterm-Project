@@ -474,7 +474,7 @@ Null Model的结果显示，price的平均值大约是207.31。这个模型没�
 如何选择交叉项
 
 ```{r echo=FALSE}
-fit_lin <- lm(price ~ host_is_superhost + latitude + longitude + room + accommodates + 
+fit_lin <- lm(log(price) ~ host_is_superhost + latitude + longitude + room + accommodates + 
              bathrooms + bedrooms + beds + minimum_nights + number_of_reviews +
              review_scores_rating + review_scores_location, data = listings_data)
 summary(fit_lin)
@@ -491,6 +491,52 @@ abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
 # Q-Q Plot
 qqnorm(resid(fit_lin), col = "#003566", main = "Q-Q Plot of Linear Model")
 qqline(resid(fit_lin), col = "#D62828")  # Add a guide line
+```
+
+```{r}
+# Get fixed effect estimates directly 
+coef_fit_lin <- coef(fit_lin)
+
+# Create data frames for coefficient estimates 
+coefest_fit_lin <- data.frame(
+  Est = coef_fit_lin,
+  Se = se(coef_fit_lin),
+  names = names(coef_fit_lin)
+  )
+
+# Graphical representation for fit4 
+ggplot(coefest_fit_lin, aes(x = names, y = Est)) +
+  geom_errorbar(aes(ymin = Est - 2 * Mad, ymax = Est + 2 * Mad), width = 0) + 
+  geom_point() +
+  labs(title = "Coefficient Estimates for fit4", x = "Coefficient", y = "Estimate") +
+  theme_minimal() + 
+  theme( 
+    plot.title = element_text(hjust = 0.5) 
+    )
+```
+
+```{r}
+# 获取模型摘要
+coef_fit_lin <- summary(fit_lin)
+
+# 提取系数和置信区间
+coef_df <- data.frame(
+  Estimate = coef_fit_lin$coefficients[, "Estimate"],
+  Std_Error = coef_fit_lin$coefficients[, "Std. Error"],
+  term = row.names(coef_fit_lin$coefficients)
+)
+
+# 添加置信区间
+coef_df$CI_low <- coef_df$Estimate - 1.96 * coef_df$Std_Error
+coef_df$CI_high <- coef_df$Estimate + 1.96 * coef_df$Std_Error
+
+# 使用ggplot2绘制系数图
+ggplot(coef_df, aes(x = term, y = Estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = CI_low, ymax = CI_high), width = 0.2) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x = 'Terms', y = 'Estimate', title = 'Coefficient Estimates from Linear Model')
 ```
 
 模型的**`Multiple R-squared`**值为0.4524，表明模型解释了大约45.24%的**`price`**变量的变异性。虽然这个值表明模型有一定的解释力，但仍有超过一半的变异性未被模型解释。
