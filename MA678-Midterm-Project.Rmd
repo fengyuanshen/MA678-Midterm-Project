@@ -53,12 +53,12 @@ listings <- read.csv("data/listings.csv", header = T)
 ```{r echo=FALSE}
 listings_data <- listings |> 
   select(id, host_id, host_name, host_since, host_response_time, host_response_rate,
-         host_acceptance_rate, host_is_superhost, host_listings_count, 
+         host_acceptance_rate, host_is_superhost, host_listings_count,
          host_identity_verified, latitude, longitude, property_type, room_type,
          accommodates, bathrooms_text, bedrooms, beds, price, minimum_nights,
          maximum_nights, number_of_reviews, review_scores_rating, review_scores_accuracy,
          review_scores_cleanliness, review_scores_checkin, review_scores_communication,
-         review_scores_location, review_scores_value, instant_bookable)
+         review_scores_location, review_scores_value, instant_bookable, host_neighbourhood,)
 ```
 
 ```{r echo=FALSE}
@@ -465,101 +465,141 @@ plot(fitted(fit_null), resid(fit_null), col = "#003566",
 abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
 ```
 
+```{r}
+# Q-Q Plot
+qqnorm(resid(fit_null), col = "#003566", main = "Q-Q Plot of Null Model")
+qqline(resid(fit_null), col = "#D62828")  # Add a guide line
+```
+
 Null Model的结果显示，price的平均值大约是207.31。这个模型没有使用任何预测变量，只是简单地预测所有Airbnb房源的平均价格。
 
-#### Model2: Linear Regression
+#### Model2: Complete pooling (Linear Regression)
 
 在上面的eda中，我们意识到价格分布呈现出明显的右偏（或正偏）特征，即大多数房源的价格较低，但也有少数房源价格非常高。考虑到这种偏态分布，线性模型（LM）可能不是最佳选择，因为LM假设响应变量近似正态分布。所以我们使用对数变换来处理响应变量，使其更接近正态分布，从而拟合线性模型。
 
 如何选择交叉项
 
 ```{r echo=FALSE}
-fit_lin <- lm(log(price) ~ host_is_superhost + latitude + longitude + room + accommodates + 
-             bathrooms + bedrooms + beds + minimum_nights + number_of_reviews +
-             review_scores_rating + review_scores_location, data = listings_data)
+fit_lin <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
+                accommodates + bathrooms + bedrooms + beds + minimum_nights +
+                number_of_reviews + review_scores_rating + review_scores_location, 
+              data = listings_data)
 summary(fit_lin)
 ```
 
-```{r}
+```{r echo=FALSE}
 # Residual plot
 plot(fitted(fit_lin), resid(fit_lin), col = "#003566",
      main = "Residual Plot of Linear Model", xlab = "Fitted Values", ylab = "Residuals")
 abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
 ```
 
-```{r}
+```{r echo=FALSE}
 # Q-Q Plot
 qqnorm(resid(fit_lin), col = "#003566", main = "Q-Q Plot of Linear Model")
 qqline(resid(fit_lin), col = "#D62828")  # Add a guide line
 ```
 
-```{r}
-# Get fixed effect estimates directly 
-coef_fit_lin <- coef(fit_lin)
-
-# Create data frames for coefficient estimates 
-coefest_fit_lin <- data.frame(
-  Est = coef_fit_lin,
-  Se = se(coef_fit_lin),
-  names = names(coef_fit_lin)
-  )
-
-# Graphical representation for fit4 
-ggplot(coefest_fit_lin, aes(x = names, y = Est)) +
-  geom_errorbar(aes(ymin = Est - 2 * Mad, ymax = Est + 2 * Mad), width = 0) + 
-  geom_point() +
-  labs(title = "Coefficient Estimates for fit4", x = "Coefficient", y = "Estimate") +
-  theme_minimal() + 
-  theme( 
-    plot.title = element_text(hjust = 0.5) 
-    )
-```
-
-```{r}
-# 获取模型摘要
+```{r echo=FALSE}
+# Get summary
 coef_fit_lin <- summary(fit_lin)
 
-# 提取系数和置信区间
+# Extract coefficients and confidence intervals
 coef_df <- data.frame(
   Estimate = coef_fit_lin$coefficients[, "Estimate"],
   Std_Error = coef_fit_lin$coefficients[, "Std. Error"],
   term = row.names(coef_fit_lin$coefficients)
 )
 
-# 添加置信区间
+# Confidence intervals
 coef_df$CI_low <- coef_df$Estimate - 1.96 * coef_df$Std_Error
 coef_df$CI_high <- coef_df$Estimate + 1.96 * coef_df$Std_Error
 
-# 使用ggplot2绘制系数图
+# Coefficient estimates
 ggplot(coef_df, aes(x = term, y = Estimate)) +
   geom_point() +
   geom_errorbar(aes(ymin = CI_low, ymax = CI_high), width = 0.2) +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(x = 'Terms', y = 'Estimate', title = 'Coefficient Estimates from Linear Model')
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+    ) +
+  labs(
+    title = 'Coefficient Estimates of Linear Model',
+    x = '', y = 'Estimate'
+    )
 ```
 
 模型的**`Multiple R-squared`**值为0.4524，表明模型解释了大约45.24%的**`price`**变量的变异性。虽然这个值表明模型有一定的解释力，但仍有超过一半的变异性未被模型解释。
 
+#### Model3: Linear Regression with Interaction Term
+
 ```{r}
-fit_lin2 <- lm(price ~ latitude + longitude + factor(room_type) + accommodates + 
-             bedrooms + beds + minimum_nights + number_of_reviews +
-             review_scores_rating + latitude:longitude + accommodates:bedrooms, data = listings_data)
+fit_lin2 <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
+                accommodates + bathrooms + bedrooms + beds + minimum_nights +
+                number_of_reviews + review_scores_rating + review_scores_location +
+                latitude:longitude + accommodates:bedrooms +
+                review_scores_rating:review_scores_location, 
+              data = listings_data)
 summary(fit_lin2)
 ```
 
 ```{r}
 # Residual plot
 plot(fitted(fit_lin2), resid(fit_lin2), col = "#003566",
-     main = "Residual Plot of Null Model", xlab = "Fitted Values", ylab = "Residuals")
+     main = "Residual Plot of Linear Model with Interaction Term",
+     xlab = "Fitted Values", ylab = "Residuals")
 abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
 ```
 
-#### Model3: No Pooling Model
+```{r}
+# Q-Q Plot
+qqnorm(resid(fit_lin2), col = "#003566", main = "Q-Q Plot of Linear Model with Interaction Term")
+qqline(resid(fit_lin2), col = "#D62828")  # Add a guide line
+```
+
+```{r}
+# Get summary
+coef_fit_lin2 <- summary(fit_lin2)
+
+# Extract coefficients and confidence intervals
+coef_df2 <- data.frame(
+  Estimate = coef_fit_lin2$coefficients[, "Estimate"],
+  Std_Error = coef_fit_lin2$coefficients[, "Std. Error"],
+  term = row.names(coef_fit_lin2$coefficients)
+)
+
+# Confidence intervals
+coef_df2$CI_low <- coef_df2$Estimate - 1.96 * coef_df2$Std_Error
+coef_df2$CI_high <- coef_df2$Estimate + 1.96 * coef_df2$Std_Error
+
+# Coefficient estimates
+ggplot(coef_df2, aes(x = term, y = Estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = CI_low, ymax = CI_high), width = 0.2) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+    ) +
+  labs(
+    title = 'Coefficient Estimates of Linear Model with Interaction Term',
+    x = '', y = 'Estimate'
+    )
+```
+
+#### Model4: No Pooling Model
 
 no pooling就是加一个factor
 
-#### Model4: Complete Pooling Model
+```{r}
+fit_no_pooling <- lm(log(price) ~ host_is_superhost + latitude + longitude +
+                              factor(host_neighbourhood) + room + accommodates + bathrooms + 
+                              bedrooms + beds + minimum_nights + number_of_reviews +
+                              review_scores_rating + review_scores_location, 
+                            data = listings_data)
+summary(fit_no_pooling)
+```
 
 #### Model5: Partial Pooling Model
 
@@ -574,12 +614,10 @@ fit_partial_pooling <- lmer(price ~ host_is_superhost + latitude + longitude + r
 summary(fit_partial_pooling)
 ```
 
-#### Residual plot
-
 ppcheck-train/test set
 
-## Result
-
-## Discussion
+## Result Analysis and Discussion
 
 ## Appendix
+
+## Reference
