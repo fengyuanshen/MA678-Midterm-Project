@@ -1,6 +1,7 @@
 ---
-title: "MA678-Midterm-Project"
-author: Fengyuan Shen (Vincent)
+title: "Data-Driven Analysis and Forecasting of the Los Angeles Airbnb Market"
+subtitle : "MA678 Midterm Project"
+author: "Fengyuan Shen (Vincent)"
 date: "2023-12-09"
 output:
   pdf_document: default
@@ -16,6 +17,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Introduction
 
 ## Literature Review
+
+In recent years, the rise and development of Airbnb has had a profound impact on urban housing markets and community dynamics. Studies have shown that the distribution of Airbnb listings is influenced by a number of factors. Deboosere et al.[1] uses hedonic regression models to analyze Airbnb transactions in New York City. This study finds that locational factors, particularly transit accessibility, greatly influence listing prices and revenues. It also indicates a trend towards the professionalization of the short-term rental market, leading to increased revenue for a smaller segment of hosts and potentially displacing long-term residents in accessible neighborhoods.
+
+According to a comprehensive review by Guttentag *[2][3]* of 132 peer-reviewed journal articles, research on Airbnb has been categorized into six primary domains: the preferences and motivations of Airbnb guests, the incentives and objectives of hosts, the impact of Airbnb on local destinations, regulatory aspects, its influence on the tourism sector, and the operational dynamics of the company itself. The study highlights that Airbnb rentals tend to be located in areas with better transit services, proximity to city centers, and higher median house values and incomes, suggesting a risk of social inequality in the sharing economy.
 
 ## Method
 
@@ -479,7 +484,7 @@ summary(fit_null)
 
 ```{r echo=FALSE}
 # Residual plot
-plot(fitted(fit_null), resid(fit_null), col = "#003566",
+plot(fitted(fit_null), resid(fit_null), col = "#003566", xlim = c(150,250),
      main = "Residual Plot of Null Model", xlab = "Fitted Values", ylab = "Residuals")
 abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
 ```
@@ -843,6 +848,12 @@ model_comparison <- data.frame(
 kable(model_comparison, caption = "Comparison of Different Models", align = 'c')
 ```
 
-## Appendix
-
 ## Reference
+
+[1] *Deboosere, R., Kerrigan, D. J., Wachsmuth, D., & El-Geneidy, A. (2019). Location, location and professionalization: a multilevel hedonic analysis of Airbnb listing prices and revenue. Regional Studies, Regional Science, 6(1), 143-156.*
+
+[2] *Jiao, J., & Bai, S. (2020). An empirical analysis of Airbnb listings in forty American cities. Cities, 99, 102618.*
+
+[3] *Guttentag, D. (2019). Progress on Airbnb: A literature review. Journal of Hospitality and Tourism Technology, 10(4)*
+
+## Appendix
