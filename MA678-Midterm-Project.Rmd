@@ -15,6 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
+## Literature Review
+
 ## Method
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -28,6 +30,8 @@ library(lubridate)
 library(stringr)
 library(kableExtra)
 library(lme4)
+library(rstanarm)
+library(caTools)
 ```
 
 ```{r echo=FALSE}
@@ -451,21 +455,33 @@ grid.arrange(p5, p6, p7, p8, p9, p10, p11, ncol = 2)
 
 ### Fitting Model
 
+#### Split Dataset into train_data and test_data
+
+```{r echo=FALSE}
+set.seed(123)
+# Allocate 80% of the data to the training set and 20% to the test set
+split <- sample.split(listings_data$price, SplitRatio = 0.8)
+
+# Split data set
+train_data <- listings_data[split, ]
+test_data <- listings_data[!split, ]
+```
+
 #### Model1: Null Model
 
-```{r}
-fit_null <- lm(price ~ 1, data = listings_data)
+```{r echo=FALSE}
+fit_null <- lm(price ~ 1, data = train_data)
 summary(fit_null)
 ```
 
-```{r}
+```{r echo=FALSE}
 # Residual plot
 plot(fitted(fit_null), resid(fit_null), col = "#003566",
      main = "Residual Plot of Null Model", xlab = "Fitted Values", ylab = "Residuals")
 abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
 ```
 
-```{r}
+```{r echo=FALSE}
 # Q-Q Plot
 qqnorm(resid(fit_null), col = "#003566", main = "Q-Q Plot of Null Model")
 qqline(resid(fit_null), col = "#D62828")  # Add a guide line
@@ -483,7 +499,7 @@ Null Model的结果显示，price的平均值大约是207.31。这个模型没�
 fit_lin <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
                 accommodates + bathrooms + bedrooms + beds + minimum_nights +
                 number_of_reviews + review_scores_rating + review_scores_location, 
-              data = listings_data)
+              data = train_data)
 summary(fit_lin)
 ```
 
@@ -534,17 +550,17 @@ ggplot(coef_df, aes(x = term, y = Estimate)) +
 
 #### Model3: Linear Regression with Interaction Term
 
-```{r}
+```{r echo=FALSE}
 fit_lin2 <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
                 accommodates + bathrooms + bedrooms + beds + minimum_nights +
                 number_of_reviews + review_scores_rating + review_scores_location +
                 latitude:longitude + accommodates:bedrooms +
                 review_scores_rating:review_scores_location, 
-              data = listings_data)
+              data = train_data)
 summary(fit_lin2)
 ```
 
-```{r}
+```{r echo=FALSE}
 # Residual plot
 plot(fitted(fit_lin2), resid(fit_lin2), col = "#003566",
      main = "Residual Plot of Linear Model with Interaction Term",
@@ -552,13 +568,13 @@ plot(fitted(fit_lin2), resid(fit_lin2), col = "#003566",
 abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
 ```
 
-```{r}
+```{r echo=FALSE}
 # Q-Q Plot
 qqnorm(resid(fit_lin2), col = "#003566", main = "Q-Q Plot of Linear Model with Interaction Term")
 qqline(resid(fit_lin2), col = "#D62828")  # Add a guide line
 ```
 
-```{r}
+```{r echo=FALSE}
 # Get summary
 coef_fit_lin2 <- summary(fit_lin2)
 
@@ -592,31 +608,118 @@ ggplot(coef_df2, aes(x = term, y = Estimate)) +
 
 no pooling就是加一个factor
 
-```{r}
-fit_no_pooling <- lm(log(price) ~ host_is_superhost + latitude + longitude +
-                              factor(host_neighbourhood) + room + accommodates + bathrooms + 
-                              bedrooms + beds + minimum_nights + number_of_reviews +
-                              review_scores_rating + review_scores_location, 
-                            data = listings_data)
+```{r echo=FALSE}
+fit_no_pooling <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
+                accommodates + bathrooms + bedrooms + beds + minimum_nights +
+                number_of_reviews + review_scores_rating + review_scores_location +
+                latitude:longitude + accommodates:bedrooms +
+                review_scores_rating:review_scores_location + factor(host_neighbourhood),
+                data = train_data)
 summary(fit_no_pooling)
+```
+
+```{r echo=FALSE}
+# Residual plot
+plot(fitted(fit_no_pooling), resid(fit_no_pooling), col = "#003566",
+     main = "Residual Plot of No Pooling Model",
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
+```
+
+```{r echo=FALSE}
+# Q-Q Plot
+qqnorm(resid(fit_no_pooling), col = "#003566", main = "Q-Q Plot of No Pooling Model")
+qqline(resid(fit_no_pooling), col = "#D62828")  # Add a guide line
 ```
 
 #### Model5: Partial Pooling Model
 
 如何选择分类变量
 
-```{r}
+fit_partial_pooling
+
+```{r echo=FALSE}
 fit_partial_pooling <- lmer(price ~ host_is_superhost + latitude + longitude + room_type + 
-                            accommodates + bathrooms + bedrooms + beds + 
-                            minimum_nights + number_of_reviews + 
-                            review_scores_rating + review_scores_location +
-                            (1 | property_type), data = listings_data)
-summary(fit_partial_pooling)
+                accommodates + bathrooms + bedrooms + beds + minimum_nights +
+                number_of_reviews + review_scores_rating + review_scores_location +
+                latitude:longitude + accommodates:bedrooms +
+                review_scores_rating:review_scores_location + factor(host_neighbourhood) +
+                (1 + | host_neighbourhood), data = train_data)
+fit_partial_pooling
 ```
 
-ppcheck-train/test set
+```{r echo=FALSE}
+# Residual plot
+plot(fitted(fit_partial_pooling), resid(fit_partial_pooling), col = "#003566",
+     main = "Residual Plot of Partial Pooling Model",
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
+```
+
+```{r echo=FALSE}
+# Q-Q Plot
+qqnorm(resid(fit_partial_pooling), col = "#003566", main = "Q-Q Plot of Partial Pooling Model")
+qqline(resid(fit_partial_pooling), col = "#D62828")  # Add a guide line
+```
 
 ## Result Analysis and Discussion
+
+```{r echo=FALSE}
+# Null Model
+# Predict the response variable of the test set
+test_predictions1 <- predict(fit_null, newdata = test_data)
+# RMSE
+rmse1 <- sqrt(mean((test_data$price - test_predictions1)^2))
+```
+
+```{r echo=FALSE}
+# Calculate RMSE of each data point
+RMSE_per_point <- sqrt((log(test_data$price) - test_predictions1)^2)
+
+# Scatter plot
+ggplot(test_data, aes(x = price, y = test_predictions1, color = RMSE_per_point)) +
+  geom_point() +
+  scale_color_gradientn(colours = c("#D00000", "#DC2F02", "#F9844A", "#F9C74F", "#90BE6D",
+                                    "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
+                                    "#023E8A", "#013A63", "#012A4A", "#03045E")) +
+  labs(x = "True Value", y = "Predictions", title = "True Values vs Predictions") +
+  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  ylim(0, 600) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    )
+```
+
+```{r}
+# Complete pooling
+# Predict the response variable of the test set
+test_predictions2 <- predict(fit_lin, newdata = test_data)
+# RMSE
+rmse2 <- sqrt(mean((log(test_data$price) - test_predictions2)^2))
+```
+
+```{r}
+# Calculate RMSE of each data point
+RMSE_per_point <- sqrt((log(test_data$price) - test_predictions2)^2)
+
+# Scatter plot
+ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_point)) +
+  geom_point() +
+  scale_color_gradientn(colours = c("#D00000", "#DC2F02", "#F9844A", "#F9C74F", "#90BE6D",
+                                    "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
+                                    "#023E8A", "#013A63", "#012A4A", "#03045E")) +
+  labs(x = "True Value", y = "Predictions", title = "True Values vs Predictions") +
+  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    )
+```
+
+```{r}
+
+```
 
 ## Appendix
 
