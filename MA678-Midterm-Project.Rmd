@@ -32,6 +32,8 @@ library(kableExtra)
 library(lme4)
 library(rstanarm)
 library(caTools)
+library(caret)
+library(knitr)
 ```
 
 ```{r echo=FALSE}
@@ -457,14 +459,16 @@ grid.arrange(p5, p6, p7, p8, p9, p10, p11, ncol = 2)
 
 #### Split Dataset into train_data and test_data
 
-```{r echo=FALSE}
+为了确保类别平衡，您可以使用 **`createDataPartition`** 函数来自 **`caret`** 包，这个函数能够进行分层抽样，保证训练集和测试集中类别的代表性。
+
+```{r echo=FALSE,warning=FALSE}
 set.seed(123)
-# Allocate 80% of the data to the training set and 20% to the test set
-split <- sample.split(listings_data$price, SplitRatio = 0.8)
+# Stratified sampling using createDataPartition
+splitIndex <- createDataPartition(listings_data$host_neighbourhood, p = 0.8, list = FALSE)
 
 # Split data set
-train_data <- listings_data[split, ]
-test_data <- listings_data[!split, ]
+train_data <- listings_data[splitIndex, ]
+test_data <- listings_data[-splitIndex, ]
 ```
 
 #### Model1: Null Model
@@ -489,7 +493,7 @@ qqline(resid(fit_null), col = "#D62828")  # Add a guide line
 
 Null Model的结果显示，price的平均值大约是207.31。这个模型没有使用任何预测变量，只是简单地预测所有Airbnb房源的平均价格。
 
-#### Model2: Complete pooling (Linear Regression)
+#### Model2: Complete Pooling Model (Linear Regression)
 
 在上面的eda中，我们意识到价格分布呈现出明显的右偏（或正偏）特征，即大多数房源的价格较低，但也有少数房源价格非常高。考虑到这种偏态分布，线性模型（LM）可能不是最佳选择，因为LM假设响应变量近似正态分布。所以我们使用对数变换来处理响应变量，使其更接近正态分布，从而拟合线性模型。
 
@@ -506,13 +510,14 @@ summary(fit_lin)
 ```{r echo=FALSE}
 # Residual plot
 plot(fitted(fit_lin), resid(fit_lin), col = "#003566",
-     main = "Residual Plot of Linear Model", xlab = "Fitted Values", ylab = "Residuals")
+     main = "Residual Plot of Linear Regression Model", 
+     xlab = "Fitted Values", ylab = "Residuals")
 abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
 ```
 
 ```{r echo=FALSE}
 # Q-Q Plot
-qqnorm(resid(fit_lin), col = "#003566", main = "Q-Q Plot of Linear Model")
+qqnorm(resid(fit_lin), col = "#003566", main = "Q-Q Plot of Linear Regression Model")
 qqline(resid(fit_lin), col = "#D62828")  # Add a guide line
 ```
 
@@ -541,14 +546,14 @@ ggplot(coef_df, aes(x = term, y = Estimate)) +
     axis.text.x = element_text(angle = 45, hjust = 1)
     ) +
   labs(
-    title = 'Coefficient Estimates of Linear Model',
+    title = 'Coefficient Estimates of Linear Regression Model',
     x = '', y = 'Estimate'
     )
 ```
 
 模型的**`Multiple R-squared`**值为0.4524，表明模型解释了大约45.24%的**`price`**变量的变异性。虽然这个值表明模型有一定的解释力，但仍有超过一半的变异性未被模型解释。
 
-#### Model3: Linear Regression with Interaction Term
+#### Model3: Linear Regression Model with Interaction Term
 
 ```{r echo=FALSE}
 fit_lin2 <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
@@ -563,14 +568,15 @@ summary(fit_lin2)
 ```{r echo=FALSE}
 # Residual plot
 plot(fitted(fit_lin2), resid(fit_lin2), col = "#003566",
-     main = "Residual Plot of Linear Model with Interaction Term",
+     main = "Residual Plot of Linear Regression Model with Interaction Term",
      xlab = "Fitted Values", ylab = "Residuals")
 abline(h = 0, col = "#D62828") # Add a horizontal line at y=0
 ```
 
 ```{r echo=FALSE}
 # Q-Q Plot
-qqnorm(resid(fit_lin2), col = "#003566", main = "Q-Q Plot of Linear Model with Interaction Term")
+qqnorm(resid(fit_lin2), col = "#003566", 
+       main = "Q-Q Plot of Linear Regression Model with Interaction Term")
 qqline(resid(fit_lin2), col = "#D62828")  # Add a guide line
 ```
 
@@ -599,7 +605,7 @@ ggplot(coef_df2, aes(x = term, y = Estimate)) +
     axis.text.x = element_text(angle = 45, hjust = 1)
     ) +
   labs(
-    title = 'Coefficient Estimates of Linear Model with Interaction Term',
+    title = 'Coefficient Estimates of Linear Regression Model with Interaction Term',
     x = '', y = 'Estimate'
     )
 ```
@@ -638,14 +644,16 @@ qqline(resid(fit_no_pooling), col = "#D62828")  # Add a guide line
 
 fit_partial_pooling
 
-```{r echo=FALSE}
-fit_partial_pooling <- lmer(price ~ host_is_superhost + latitude + longitude + room_type + 
-                accommodates + bathrooms + bedrooms + beds + minimum_nights +
-                number_of_reviews + review_scores_rating + review_scores_location +
-                latitude:longitude + accommodates:bedrooms +
-                review_scores_rating:review_scores_location + factor(host_neighbourhood) +
-                (1 + | host_neighbourhood), data = train_data)
-fit_partial_pooling
+```{r echo=FALSE,warning=FALSE}
+fit_partial_pooling <- lmer(log(price) ~ host_is_superhost + latitude + longitude + 
+                              room_type + accommodates + bathrooms + bedrooms + beds +
+                              minimum_nights + number_of_reviews + review_scores_rating +
+                              review_scores_location + latitude:longitude + 
+                              accommodates:bedrooms +
+                              review_scores_rating:review_scores_location + 
+                              (1 | host_neighbourhood), 
+                            data = train_data)
+summary(fit_partial_pooling)
 ```
 
 ```{r echo=FALSE}
@@ -666,6 +674,8 @@ qqline(resid(fit_partial_pooling), col = "#D62828")  # Add a guide line
 
 颜色越红，rmse越小
 
+#### Null Model
+
 ```{r echo=FALSE}
 # Null Model
 # Predict the response variable of the test set
@@ -676,7 +686,7 @@ rmse1 <- sqrt(mean((test_data$price - test_predictions1)^2))
 
 ```{r echo=FALSE}
 # Calculate RMSE of each data point
-RMSE_per_point <- sqrt((log(test_data$price) - test_predictions1)^2)
+RMSE_per_point <- sqrt((test_data$price - test_predictions1)^2)
 
 # Scatter plot
 ggplot(test_data, aes(x = price, y = test_predictions1, color = RMSE_per_point)) +
@@ -695,17 +705,19 @@ ggplot(test_data, aes(x = price, y = test_predictions1, color = RMSE_per_point))
     )
 ```
 
-```{r}
-# Complete pooling
+#### Complete Pooling Model (Linear Regression)
+
+```{r echo=FALSE}
+# Complete Pooling
 # Predict the response variable of the test set
 test_predictions2 <- predict(fit_lin, newdata = test_data)
 # RMSE
-rmse2 <- sqrt(mean((log(test_data$price) - test_predictions2)^2))
+rmse2 <- sqrt(mean((test_data$price - exp(test_predictions2))^2))
 ```
 
-```{r}
+```{r echo=FALSE,warning=FALSE}
 # Calculate RMSE of each data point
-RMSE_per_point <- sqrt((log(test_data$price) - test_predictions2)^2)
+RMSE_per_point <- sqrt((test_data$price - exp(test_predictions2))^2)
 
 # Scatter plot
 ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_point)) +
@@ -714,28 +726,29 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - Complete Pooling (Linear Regression)",
+    title = "True Values vs Predictions - Complete Pooling Model (Linear Regression)",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
-  ylim(0, 600) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
     )
 ```
 
+#### Linear Regression Model with Interaction Term
+
 ```{r echo=FALSE}
-# Linear Regression with Interaction Term
+# Linear Regression Model with Interaction Term
 # Predict the response variable of the test set
 test_predictions3 <- predict(fit_lin2, newdata = test_data)
 # RMSE
-rmse3 <- sqrt(mean((log(test_data$price) - test_predictions3)^2))
+rmse3 <- sqrt(mean((test_data$price - exp(test_predictions3))^2))
 ```
 
 ```{r}
 # Calculate RMSE of each data point
-RMSE_per_point <- sqrt((log(test_data$price) - test_predictions3)^2)
+RMSE_per_point <- sqrt((test_data$price - exp(test_predictions3))^2)
 
 # Scatter plot
 ggplot(test_data, aes(x = price, y = exp(test_predictions3), color = RMSE_per_point)) +
@@ -744,11 +757,72 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions3), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - Linear Regression with Interaction Term",
+    title = "True Values vs Predictions - Linear Regression Model with Interaction Term",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
-  ylim(0, 600) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    )
+```
+
+#### No Pooling Model
+
+```{r echo=FALSE}
+# No Pooling Model
+# Predict the response variable of the test set
+test_predictions4 <- predict(fit_no_pooling, newdata = test_data)
+# RMSE
+rmse4 <- sqrt(mean((test_data$price - exp(test_predictions4))^2))
+```
+
+```{r echo=FALSE,warning=FALSE}
+# Calculate RMSE of each data point
+RMSE_per_point <- sqrt((test_data$price - exp(test_predictions4))^2)
+
+# Scatter plot
+ggplot(test_data, aes(x = price, y = exp(test_predictions4), color = RMSE_per_point)) +
+  geom_point() +
+  scale_color_gradientn(colours = c("#D00000", "#DC2F02", "#F9844A", "#F9C74F", "#90BE6D",
+                                    "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
+                                    "#023E8A", "#013A63", "#012A4A", "#03045E")) +
+  labs(
+    title = "True Values vs Predictions - No Pooling Model",
+    x = "True Value", y = "Predictions"
+    ) +
+  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    )
+```
+
+#### Partial Pooling Model
+
+```{r}
+# Partial Pooling Model
+# Predict the response variable of the test set
+test_predictions5 <- predict(fit_partial_pooling, newdata = test_data)
+# RMSE
+rmse5 <- sqrt(mean((test_data$price - exp(test_predictions5))^2))
+```
+
+```{r}
+# Calculate RMSE of each data point
+RMSE_per_point <- sqrt((test_data$price - exp(test_predictions5))^2)
+
+# Scatter plot
+ggplot(test_data, aes(x = price, y = exp(test_predictions5), color = RMSE_per_point)) +
+  geom_point() +
+  scale_color_gradientn(colours = c("#D00000", "#DC2F02", "#F9844A", "#F9C74F", "#90BE6D",
+                                    "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
+                                    "#023E8A", "#013A63", "#012A4A", "#03045E")) +
+  labs(
+    title = "True Values vs Predictions - Partial Pooling Model",
+    x = "True Value", y = "Predictions"
+    ) +
+  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
@@ -756,19 +830,18 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions3), color = RMSE_per_po
 ```
 
 ```{r}
+# Create dataframe
+model_comparison <- data.frame(
+  Model = c("Null Model", 
+            "Complete Pooling Model (Linear Regression)", 
+            "Linear Regression Model with Interaction Term", 
+            "No Pooling Model", 
+            "Partial Pooling Model"),
+  RMSE = c(107.05792, 84.35703, 80.32188, 77.19066, 77.04541)
+)
 
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
+# Use kable to generate tables
+kable(model_comparison, caption = "Comparison of Different Models", align = 'c')
 ```
 
 ## Appendix
