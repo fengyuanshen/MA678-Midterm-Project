@@ -1,10 +1,10 @@
 ---
 title: "MA678-Midterm-Project"
-output: 
-  pdf_document: 
-    latex_engine: xelatex
 author: Fengyuan Shen (Vincent)
 date: "2023-12-09"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -28,7 +28,6 @@ library(reshape2)
 library(gridExtra)
 library(lubridate)
 library(stringr)
-library(kableExtra)
 library(lme4)
 library(rstanarm)
 library(caTools)
@@ -697,7 +696,7 @@ ggplot(test_data, aes(x = price, y = test_predictions1, color = RMSE_per_point))
   labs(
     title = "True Values vs Predictions - Null Model",
     x = "True Value", y = "Predictions") +
-  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
   ylim(0, 600) +
   theme_minimal() +
   theme(
@@ -729,7 +728,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_po
     title = "True Values vs Predictions - Complete Pooling Model (Linear Regression)",
     x = "True Value", y = "Predictions"
     ) +
-  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
@@ -760,7 +759,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions3), color = RMSE_per_po
     title = "True Values vs Predictions - Linear Regression Model with Interaction Term",
     x = "True Value", y = "Predictions"
     ) +
-  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
@@ -791,7 +790,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions4), color = RMSE_per_po
     title = "True Values vs Predictions - No Pooling Model",
     x = "True Value", y = "Predictions"
     ) +
-  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
@@ -800,7 +799,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions4), color = RMSE_per_po
 
 #### Partial Pooling Model
 
-```{r}
+```{r echo=FALSE}
 # Partial Pooling Model
 # Predict the response variable of the test set
 test_predictions5 <- predict(fit_partial_pooling, newdata = test_data)
@@ -808,7 +807,7 @@ test_predictions5 <- predict(fit_partial_pooling, newdata = test_data)
 rmse5 <- sqrt(mean((test_data$price - exp(test_predictions5))^2))
 ```
 
-```{r}
+```{r echo=FALSE}
 # Calculate RMSE of each data point
 RMSE_per_point <- sqrt((test_data$price - exp(test_predictions5))^2)
 
@@ -822,14 +821,14 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions5), color = RMSE_per_po
     title = "True Values vs Predictions - Partial Pooling Model",
     x = "True Value", y = "Predictions"
     ) +
-  geom_abline(intercept = 0, slope = 1, color = "black", size = 0.8) +
+  geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
     )
 ```
 
-```{r}
+```{r echo=FALSE}
 # Create dataframe
 model_comparison <- data.frame(
   Model = c("Null Model", 
