@@ -306,6 +306,8 @@ ggplot(listings_data, aes(reorder(room_type, room_type, function(x) -length(x)),
   )
 ```
 
+The bar chart depicts the room type distribution of Airbnb listings in Los Angeles, highlighting a predominant preference for **`Entire home/apartments`** which far outnumbers the other room types. This distribution suggests a significant market demand for entire homes or apartments, with limited availability or demand for hotel-style accommodations on the platform.
+
 ```{r echo=FALSE}
 # Price Distribution of Different Room Types
 # boxplot
@@ -321,6 +323,8 @@ ggplot(listings_data, aes(x = room_type, y = price, fill = room_type)) +
     plot.title = element_text(hjust = 0.5)
   )
 ```
+
+I used boxplot to provide a compelling visualization of the price variance among different room types offered on Airbnb in Los Angeles. The distinct median prices and interquartile ranges across **`Entire home/apartments`**, **`Private room`**, and **`Hotel room`** indicate that room type is a significant factor influencing listing prices.
 
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
 # Price vs Accommodates
@@ -377,7 +381,11 @@ p4 <- ggplot(listings_data, aes(x = beds, y = price)) +
 grid.arrange(p1, p2, p3, p4, nrow = 2)
 ```
 
-看一下评分数量的分布，来决定评分是否可以作为预测价格的指标
+The scatter plots above illustrate the relationship between Airbnb listing prices and property features such as the number of people the property can accommodate, and the number of bathrooms, bedrooms, and beds available.
+
+A positive trend is observed across all variables, with listing prices increasing in tandem with the number of accommodations, bathrooms, bedrooms, and beds. This suggests that properties with greater capacity and amenities are priced higher, reflecting their increased value to renters.
+
+The clear trends demonstrated in these plots justify the inclusion of these variables in the model, as they are likely to be significant predictors of price.
 
 ```{r echo=FALSE,warning=FALSE}
 # Distribution for Number of Reviews
@@ -393,7 +401,7 @@ ggplot(listings_data, aes(x = number_of_reviews)) +
   )
 ```
 
-画一张评分和价格的关系图
+From the histogram which illustrates a right-skewed distribution for the number of reviews per Airbnb listing, the presence of listings with an exceptionally high number of reviews suggests that there are a few highly popular or long-established listings. Given the significance of customer reviews in influencing rental desirability and trustworthiness, the number of reviews will be included as a variable in the model to capture its potential impact on pricing.
 
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
 # Price vs Overall Rating
@@ -471,11 +479,19 @@ p11 <- ggplot(listings_data, aes(x = review_scores_value, y = price)) +
 grid.arrange(p5, p6, p7, p8, p9, p10, p11, ncol = 2)
 ```
 
+The scatter plots above analyze the relationship between Airbnb listing prices in Los Angeles and various customer ratings. The upward trend in the price versus overall rating plot suggests a positive correlation. Meanwhile, the location rating also shows a pronounced positive correlation with price, highlighting the potential influence of location on pricing decisions. In contrast, the plots for accuracy, cleanliness, check-in, communication, and value ratings show a less distinct relationship with price, suggesting that these factors might not be as influential in the pricing model.
+
+As a result, given the visual trend of the overall and location rating, it is prudent to consider incorporating overall ratings and location-related ratings into the predictive model.
+
 ### Fitting Model
 
-#### Split Dataset into train_data and test_data
+Based on the insights garnered from the literature and EDA process, I decided to include the following variables as predictors in the model: **`host_is_superhost`**, **`room_type`**, **`accommodates`**, **`bathrooms`**, **`bedrooms`**, **`beds`**, **`minimum_nights`**, **`number_of_reviews`**, **`review_scores_ratings`**, **`review_scores_location`**, along with geographical coordinates **`latitude`** and **`longitude`**.
 
-为了确保类别平衡，您可以使用 **`createDataPartition`** 函数来自 **`caret`** 包，这个函数能够进行分层抽样，保证训练集和测试集中类别的代表性。
+Moving forward, to facilitate the validation of the model's predictive efficacy post-construction, I have partitioned the data into train set and test set. The model will be built on the train set, thereafter its performance will be assessed on the test set.
+
+#### Split the Dataset into train_data and test_data
+
+To ensure class balance within the dataset, I utilized the **`createDataPartition`** function from the **`caret`** package, which performs stratified sampling to maintain representative proportions of classes in both the train and test sets. I allocated 80% of the data for training purposes and reserved 20% for testing.
 
 ```{r echo=FALSE,warning=FALSE}
 set.seed(123)
@@ -488,6 +504,8 @@ test_data <- listings_data[-splitIndex, ]
 ```
 
 #### Model1: Null Model
+
+\text{Price} = \alpha
 
 ```{r echo=FALSE}
 fit_null <- lm(price ~ 1, data = train_data)
@@ -507,13 +525,17 @@ qqnorm(resid(fit_null), col = "#003566", main = "Q-Q Plot of Null Model")
 qqline(resid(fit_null), col = "#D62828")  # Add a guide line
 ```
 
-Null Model的结果显示，price的平均值大约是207.31。这个模型没有使用任何预测变量，只是简单地预测所有Airbnb房源的平均价格。
+The null model serves as a baseline for my regression analysis, assuming no predictors other than the intercept. The summary output indicates that the intercept, representing the average listing price when no predictors are included, is estimated at 207.2075 with a standard deviation of 0.9585. This model is statistically significant, as evidenced by the p-value of less than 2e-16. However, the large residual standard error of 108.8 suggests considerable unexplained variability in listing prices.
+
+For the residual plot, I observe a very narrow vertical distribution of residuals, showing that the model does not capture the variance in the data. Also, the Q-Q Plot of the null model indicates that the residuals are not normally distributed.
+
+Based on the above analysis, I would say that the null model, without any predictors, is insufficient for explaining the variance in the Airbnb listing prices.
 
 #### Model2: Complete Pooling Model (Linear Regression)
 
-在上面的eda中，我们意识到价格分布呈现出明显的右偏（或正偏）特征，即大多数房源的价格较低，但也有少数房源价格非常高。考虑到这种偏态分布，线性模型（LM）可能不是最佳选择，因为LM假设响应变量近似正态分布。所以我们使用对数变换来处理响应变量，使其更接近正态分布，从而拟合线性模型。
+During the EDA process, it became evident that the distribution of listing prices was substantially right-skewed, with the majority of listings being lower-priced, while a minority were notably higher-priced. Given this skewed distribution, a linear model (LM) may not be the best choice because LM assumes that the response variables are approximately normally distributed. So I used a logarithmic transformation to process the response variable to make it closer to a normal distribution and thus fit a linear model.
 
-如何选择交叉项
+\log(\text{price}) = \alpha + \beta_1 \cdot \text{host\_is\_superhost} + \beta_2 \cdot \text{latitude} + \beta_3 \cdot \text{longitude} + \beta_4 \cdot \text{room\_type} + \beta_5 \cdot \text{accommodates} + \beta_6 \cdot \text{bathrooms} + \beta_7 \cdot \text{bedrooms} + \beta_8 \cdot \text{beds} + \beta_9 \cdot \text{minimum\_nights} + \beta_{10} \cdot \text{number\_of\_reviews} + \beta_{11} \cdot \text{review\_scores\_rating} + \beta_{12} \cdot \text{review\_scores\_location}
 
 ```{r echo=FALSE}
 fit_lin <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
