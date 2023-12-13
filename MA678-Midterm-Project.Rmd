@@ -3,7 +3,7 @@ title: "Data-Driven Analysis and Forecasting of the Los Angeles Airbnb Market"
 subtitle : "MA678 Midterm Project"
 author: "Fengyuan Shen (Vincent)"
 date: "2023-12-09"
-output:
+output: 
   pdf_document:
     latex_engine: xelatex
 ---
@@ -714,7 +714,7 @@ test_predictions1 <- predict(fit_null, newdata = test_data)
 rmse1 <- sqrt(mean((test_data$price - test_predictions1)^2))
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE,fig.align='center'}
 # Calculate RMSE of each data point
 RMSE_per_point <- sqrt((test_data$price - test_predictions1)^2)
 
@@ -745,7 +745,7 @@ test_predictions2 <- predict(fit_lin, newdata = test_data)
 rmse2 <- sqrt(mean((test_data$price - exp(test_predictions2))^2))
 ```
 
-```{r echo=FALSE,warning=FALSE}
+```{r echo=FALSE,warning=FALSE,fig.align='center'}
 # Calculate RMSE of each data point
 RMSE_per_point <- sqrt((test_data$price - exp(test_predictions2))^2)
 
@@ -756,7 +756,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - Complete Pooling Model (Linear Regression)",
+    title = "True Values vs Predictions - Complete Pooling",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
@@ -776,7 +776,7 @@ test_predictions3 <- predict(fit_lin2, newdata = test_data)
 rmse3 <- sqrt(mean((test_data$price - exp(test_predictions3))^2))
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE,fig.align='center'}
 # Calculate RMSE of each data point
 RMSE_per_point <- sqrt((test_data$price - exp(test_predictions3))^2)
 
@@ -787,7 +787,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions3), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - Linear Regression Model with Interaction Term",
+    title = "True Values vs Predictions - LR with Interaction",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
@@ -807,7 +807,7 @@ test_predictions4 <- predict(fit_no_pooling, newdata = test_data)
 rmse4 <- sqrt(mean((test_data$price - exp(test_predictions4))^2))
 ```
 
-```{r echo=FALSE,warning=FALSE}
+```{r echo=FALSE,warning=FALSE,fig.align='center'}
 # Calculate RMSE of each data point
 RMSE_per_point <- sqrt((test_data$price - exp(test_predictions4))^2)
 
@@ -818,7 +818,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions4), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - No Pooling Model",
+    title = "True Values vs Predictions - No Pooling",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
@@ -838,7 +838,7 @@ test_predictions5 <- predict(fit_partial_pooling, newdata = test_data)
 rmse5 <- sqrt(mean((test_data$price - exp(test_predictions5))^2))
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE,fig.align='center'}
 # Calculate RMSE of each data point
 RMSE_per_point <- sqrt((test_data$price - exp(test_predictions5))^2)
 
@@ -849,7 +849,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions5), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - Partial Pooling Model",
+    title = "True Values vs Predictions - Partial Pooling",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
