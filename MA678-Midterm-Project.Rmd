@@ -525,17 +525,17 @@ qqnorm(resid(fit_null), col = "#003566", main = "Q-Q Plot of Null Model")
 qqline(resid(fit_null), col = "#D62828")  # Add a guide line
 ```
 
-The null model serves as a baseline for my regression analysis, assuming no predictors other than the intercept. The summary output indicates that the intercept, representing the average listing price when no predictors are included, is estimated at 207.2075 with a standard deviation of 0.9585. This model is statistically significant, as evidenced by the p-value of less than 2e-16. However, the large residual standard error of 108.8 suggests considerable unexplained variability in listing prices.
+The Null Model serves as a baseline for my regression analysis, assuming no predictors other than the intercept. The summary output indicates that the intercept, representing the average listing price when no predictors are included, is estimated at 207.2075 with a standard deviation of 0.9585. This model is statistically significant, as evidenced by the p-value of less than 2e-16. However, the large residual standard error of 108.8 suggests considerable unexplained variability in listing prices.
 
-For the residual plot, I observe a very narrow vertical distribution of residuals, showing that the model does not capture the variance in the data. Also, the Q-Q Plot of the null model indicates that the residuals are not normally distributed.
+For the residual plot, I observe a very narrow vertical distribution of residuals, showing that the model does not capture the variance in the data. Also, the Q-Q Plot of the Null Model indicates that the residuals are not normally distributed.
 
-Based on the above analysis, I would say that the null model, without any predictors, is insufficient for explaining the variance in the Airbnb listing prices.
+Based on the above analysis, I would say that the Null Model, without any predictors, is insufficient for explaining the variance in the Airbnb listing prices.
 
 #### Model2: Complete Pooling Model (Linear Regression)
 
 During the EDA process, it became evident that the distribution of listing prices was substantially right-skewed, with the majority of listings being lower-priced, while a minority were notably higher-priced. Given this skewed distribution, a linear model (LM) may not be the best choice because LM assumes that the response variables are approximately normally distributed. So I used a logarithmic transformation to process the response variable to make it closer to a normal distribution and thus fit a linear model.
 
-\log(\text{price}) = \alpha + \beta_1 \cdot \text{host\_is\_superhost} + \beta_2 \cdot \text{latitude} + \beta_3 \cdot \text{longitude} + \beta_4 \cdot \text{room\_type} + \beta_5 \cdot \text{accommodates} + \beta_6 \cdot \text{bathrooms} + \beta_7 \cdot \text{bedrooms} + \beta_8 \cdot \text{beds} + \beta_9 \cdot \text{minimum\_nights} + \beta_{10} \cdot \text{number\_of\_reviews} + \beta_{11} \cdot \text{review\_scores\_rating} + \beta_{12} \cdot \text{review\_scores\_location}
+\log(\text{price}) = \alpha + \beta\_1 \cdot \text{host\_is\_superhost} + \beta\_2 \cdot \text{latitude} + \beta\_3 \cdot \text{longitude} + \beta\_4 \cdot \text{room\_type} + \beta\_5 \cdot \text{accommodates} + \beta\_6 \cdot \text{bathrooms} + \beta*7* \cdot \text{bedrooms} + \beta*8* \cdot \text{beds} + \beta*9* \cdot \text{minimum\_nights} + \beta{10} \cdot \text{number\_of\_reviews} + \beta{11} \cdot \text{review\_scores\_rating} + \beta{12} \cdot \text{review\_scores\_location}
 
 ```{r echo=FALSE}
 fit_lin <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
@@ -559,39 +559,19 @@ qqnorm(resid(fit_lin), col = "#003566", main = "Q-Q Plot of Linear Regression Mo
 qqline(resid(fit_lin), col = "#D62828")  # Add a guide line
 ```
 
-```{r echo=FALSE}
-# Get summary
-coef_fit_lin <- summary(fit_lin)
+The Complete Pooling model was estimated using a Linear Regression approach. The summary of the regression model indicates all the variables are statistically significant predictors of the logarithmically transformed price, as demonstrated by the p-values less than 0.05.
 
-# Extract coefficients and confidence intervals
-coef_df <- data.frame(
-  Estimate = coef_fit_lin$coefficients[, "Estimate"],
-  Std_Error = coef_fit_lin$coefficients[, "Std. Error"],
-  term = row.names(coef_fit_lin$coefficients)
-)
+The coefficients from the model provide insights into the relative impact of each predictor. For instance, being a superhost and having additional bathrooms and bedrooms are associated with higher prices, while the type of room being either a hotel room or a private room typically corresponds with a lower price relative to entire homes/apartments.
 
-# Confidence intervals
-coef_df$CI_low <- coef_df$Estimate - 1.96 * coef_df$Std_Error
-coef_df$CI_high <- coef_df$Estimate + 1.96 * coef_df$Std_Error
+The Adjusted R-squared value of the model is 0.4525, indicating that the model explains about 45.25% of the variability of the price variable.
 
-# Coefficient estimates
-ggplot(coef_df, aes(x = term, y = Estimate)) +
-  geom_point() +
-  geom_errorbar(aes(ymin = CI_low, ymax = CI_high), width = 0.2) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    axis.text.x = element_text(angle = 45, hjust = 1)
-    ) +
-  labs(
-    title = 'Coefficient Estimates of Linear Regression Model',
-    x = '', y = 'Estimate'
-    )
-```
+The Residual Plot of the Linear Regression Model shows residuals scattered around the zero line, which is indicative of a good fit, but the pattern suggests potential heteroscedasticity as the variance of residuals appears to increase with the fitted values.
 
-模型的**`Multiple R-squared`**值为0.4524，表明模型解释了大约45.24%的**`price`**变量的变异性。虽然这个值表明模型有一定的解释力，但仍有超过一半的变异性未被模型解释。
+The Q-Q Plot of the Linear Regression Model reveals some deviation from normality, particularly in the tails of the distribution, suggesting that the normality assumption may not fully hold. This could be due to outliers.
 
 #### Model3: Linear Regression Model with Interaction Term
+
+\log(\text{price}) = \alpha + \beta\_1 \cdot \text{host\_is\_superhost} + \beta\_2 \cdot \text{latitude} + \beta\_3 \cdot \text{longitude} + \beta*4* \cdot \text{room\_type} + \beta*5* \cdot \text{accommodates} + \beta*6* \cdot \text{bathrooms} + \beta*7* \cdot \text{bedrooms} + \beta*8* \cdot \text{beds} + \beta*9* \cdot \text{minimum\_nights} + \beta{10} \cdot \text{number\_of\_reviews} + \beta{11} \cdot \text{review\_scores\_rating} + \beta{12} \cdot \text{review\_scores\_location} + \beta{13} \cdot (\text{latitude} \cdot \text{longitude}) + \beta{14} \cdot (\text{accommodates} \cdot \text{bedrooms}) + \beta{15} \cdot (\text{review\_scores\_rating} \cdot \text{review\_scores\_location})
 
 ```{r echo=FALSE}
 fit_lin2 <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
@@ -618,39 +598,17 @@ qqnorm(resid(fit_lin2), col = "#003566",
 qqline(resid(fit_lin2), col = "#D62828")  # Add a guide line
 ```
 
-```{r echo=FALSE}
-# Get summary
-coef_fit_lin2 <- summary(fit_lin2)
+This model is an extension from the basic model to include interactions between certain variables. Specifically, interaction terms between latitude and longitude, accommodates and bedrooms, and review_scores_rating and review_scores_location have been included, suggesting that I believe the influence of location on price is not uniform across the geographic space, that the relationship between the number of people accommodated and the price varies with the number of bedrooms, and that the impact of review scores on price is moderated by their respective locations.
 
-# Extract coefficients and confidence intervals
-coef_df2 <- data.frame(
-  Estimate = coef_fit_lin2$coefficients[, "Estimate"],
-  Std_Error = coef_fit_lin2$coefficients[, "Std. Error"],
-  term = row.names(coef_fit_lin2$coefficients)
-)
+This model retains many of the predictors from the previous model, with all variables showing statistical significance in predicting the logarithmically transformed price.
 
-# Confidence intervals
-coef_df2$CI_low <- coef_df2$Estimate - 1.96 * coef_df2$Std_Error
-coef_df2$CI_high <- coef_df2$Estimate + 1.96 * coef_df2$Std_Error
-
-# Coefficient estimates
-ggplot(coef_df2, aes(x = term, y = Estimate)) +
-  geom_point() +
-  geom_errorbar(aes(ymin = CI_low, ymax = CI_high), width = 0.2) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    axis.text.x = element_text(angle = 45, hjust = 1)
-    ) +
-  labs(
-    title = 'Coefficient Estimates of Linear Regression Model with Interaction Term',
-    x = '', y = 'Estimate'
-    )
-```
+The Residual Plot and Q-Q Plot show the similar pattern to the previous model. However, the adjusted R-squared value of 0.4766 represents a slight improvement over the previous model, explaining approximately 47.66% of the variability in the transformed price. Therefore, the inclusion of interaction terms in the model did slghtly improve the model.
 
 #### Model4: No Pooling Model
 
 no pooling就是加一个factor
+
+\log(\text{price}) = \alpha + \beta\_1 \cdot \text{host\_is\_superhost} + \beta\_2 \cdot \text{latitude} + \beta*3* \cdot \text{longitude} + \beta*4* \cdot \text{room\_type} + \beta*5* \cdot \text{accommodates} + \beta*6* \cdot \text{bathrooms} + \beta*7* \cdot \text{bedrooms} + \beta*8* \cdot \text{beds} + \beta*9* \cdot \text{minimum\_nights} + \beta{10} \cdot \text{number\_of\_reviews} + \beta{11} \cdot \text{review\_scores\_rating} + \beta{12} \cdot \text{review\_scores\_location} + \beta{13} \cdot (\text{latitude} \cdot \text{longitude}) + \beta{14} \cdot (\text{accommodates} \cdot \text{bedrooms}) + \beta{15} \cdot (\text{review\_scores\_rating} \cdot \text{review\_scores\_location}) + \beta{16} \cdot \text{host\_neighbourhood}
 
 ```{r echo=FALSE}
 fit_no_pooling <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
@@ -659,7 +617,21 @@ fit_no_pooling <- lm(log(price) ~ host_is_superhost + latitude + longitude + roo
                 latitude:longitude + accommodates:bedrooms +
                 review_scores_rating:review_scores_location + factor(host_neighbourhood),
                 data = train_data)
-summary(fit_no_pooling)
+
+# Display summary of the coefficients with a limited number of coefficients
+coef_summary <- summary(fit_no_pooling)$coefficients
+
+# Print the first 17 coefficients
+print(coef_summary[1:17, ])
+
+# Print the specified summary statistics
+cat("\nResidual standard error: ", summary(fit_no_pooling)$sigma, " on ", 
+    fit_no_pooling$df.residual, " degrees of freedom\n")
+cat("Multiple R-squared: ", summary(fit_no_pooling)$r.squared, "\tAdjusted R-squared: ",
+    summary(fit_no_pooling)$adj.r.squared, "\n")
+cat("F-statistic: ", summary(fit_no_pooling)$fstatistic[1], " on ", 
+    summary(fit_no_pooling)$fstatistic[2], " and ", summary(fit_no_pooling)$fstatistic[3],
+    " DF,  p-value: ", summary(fit_no_pooling)$fstatistic[4], "\n")
 ```
 
 ```{r echo=FALSE}
@@ -676,11 +648,13 @@ qqnorm(resid(fit_no_pooling), col = "#003566", main = "Q-Q Plot of No Pooling Mo
 qqline(resid(fit_no_pooling), col = "#D62828")  # Add a guide line
 ```
 
+For the No Pooling Model, I included a neighborhood-specific effect, thereby capturing local variations that the Complete Pooling Model might miss. The model output suggests that all predictors are statistically significant, as indicated by their p-values.
+
 #### Model5: Partial Pooling Model
 
 如何选择分类变量
 
-fit_partial_pooling
+\log(\text{price}) = \alpha + \beta\_1 \cdot \text{host\_is\_superhost} + \beta\_2 \cdot \text{latitude} + \beta*3* \cdot \text{longitude} + \beta*4* \cdot \text{room\_type} + \beta*5* \cdot \text{accommodates} + \beta*6* \cdot \text{bathrooms} + \beta*7* \cdot \text{bedrooms} + \beta*8* \cdot \text{beds} + \beta*9* \cdot \text{minimum\_nights} + \beta{10} \cdot \text{number\_of\_reviews} + \beta{11} \cdot \text{review\_scores\_rating} + \beta{12} \cdot \text{review\_scores\_location} + \beta{13} \cdot (\text{latitude} \cdot \text{longitude}) + \beta{14} \cdot (\text{accommodates} \cdot \text{bedrooms}) + \beta{15} \cdot (\text{review\_scores\_rating} \cdot \text{review\_scores\_location}) + b{\text{host\_neighbourhood}}
 
 ```{r echo=FALSE,warning=FALSE}
 fit_partial_pooling <- lmer(log(price) ~ host_is_superhost + latitude + longitude + 
@@ -891,3 +865,63 @@ kable(model_comparison, caption = "Comparison of Different Models", align = 'c')
 [3] *Guttentag, D. (2019). Progress on Airbnb: A literature review. Journal of Hospitality and Tourism Technology, 10(4)*
 
 ## Appendix
+
+```{r echo=FALSE}
+# Get summary
+coef_fit_lin <- summary(fit_lin)
+
+# Extract coefficients and confidence intervals
+coef_df <- data.frame(
+  Estimate = coef_fit_lin$coefficients[, "Estimate"],
+  Std_Error = coef_fit_lin$coefficients[, "Std. Error"],
+  term = row.names(coef_fit_lin$coefficients)
+)
+
+# Confidence intervals
+coef_df$CI_low <- coef_df$Estimate - 1.96 * coef_df$Std_Error
+coef_df$CI_high <- coef_df$Estimate + 1.96 * coef_df$Std_Error
+
+# Coefficient estimates
+ggplot(coef_df, aes(x = term, y = Estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = CI_low, ymax = CI_high), width = 0.2) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+    ) +
+  labs(
+    title = 'Coefficient Estimates of Linear Regression Model',
+    x = '', y = 'Estimate'
+    )
+```
+
+```{r echo=FALSE}
+# Get summary
+coef_fit_lin2 <- summary(fit_lin2)
+
+# Extract coefficients and confidence intervals
+coef_df2 <- data.frame(
+  Estimate = coef_fit_lin2$coefficients[, "Estimate"],
+  Std_Error = coef_fit_lin2$coefficients[, "Std. Error"],
+  term = row.names(coef_fit_lin2$coefficients)
+)
+
+# Confidence intervals
+coef_df2$CI_low <- coef_df2$Estimate - 1.96 * coef_df2$Std_Error
+coef_df2$CI_high <- coef_df2$Estimate + 1.96 * coef_df2$Std_Error
+
+# Coefficient estimates
+ggplot(coef_df2, aes(x = term, y = Estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = CI_low, ymax = CI_high), width = 0.2) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+    ) +
+  labs(
+    title = 'Coefficient Estimates of Linear Regression Model with Interaction Term',
+    x = '', y = 'Estimate'
+    )
+```
