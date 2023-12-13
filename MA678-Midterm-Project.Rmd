@@ -16,13 +16,19 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
+Airbnb的背景。这篇project试图解决什么问题，用了什么方法，干了哪些事。文章的整体结构。
+
 ## Literature Review
 
 In recent years, the rise and development of Airbnb has had a profound impact on urban housing markets and community dynamics. Studies have shown that the distribution of Airbnb listings is influenced by a number of factors. Deboosere et al.[1] uses hedonic regression models to analyze Airbnb transactions in New York City. This study finds that locational factors, particularly transit accessibility, greatly influence listing prices and revenues. It also indicates a trend towards the professionalization of the short-term rental market, leading to increased revenue for a smaller segment of hosts and potentially displacing long-term residents in accessible neighborhoods.
 
-According to a comprehensive review by Guttentag *[2][3]* of 132 peer-reviewed journal articles, research on Airbnb has been categorized into six primary domains: the preferences and motivations of Airbnb guests, the incentives and objectives of hosts, the impact of Airbnb on local destinations, regulatory aspects, its influence on the tourism sector, and the operational dynamics of the company itself. The study highlights that Airbnb rentals tend to be located in areas with better transit services, proximity to city centers, and higher median house values and incomes, suggesting a risk of social inequality in the sharing economy.
+According to a comprehensive review by Guttentag [2][3] of 132 peer-reviewed journal articles, research on Airbnb has been categorized into six primary domains: the preferences and motivations of Airbnb guests, the incentives and objectives of hosts, the impact of Airbnb on local destinations, regulatory aspects, its influence on the tourism sector, and the operational dynamics of the company itself. The study highlights that Airbnb rentals tend to be located in areas with better transit services, proximity to city centers, and higher median house values and incomes, suggesting a risk of social inequality in the sharing economy.
+
+In summary, these studies highlight a variety of factors that can affect Airbnb's listing prices. These insights have informed the modeling and analysis in my project, which focuses on identifying and analyzing the factors that can impact the pricing of Airbnb listings. This involves examining how elements like location, socioeconomic status, and broader market trends.
 
 ## Method
+
+The initial dataset was segmented into ten distinct sections. To facilitate a comprehensive analysis, I consolidated these segments into a single dataset, subsequently named **`listings.csv`**.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -60,6 +66,8 @@ listings <- read.csv("data/listings.csv", header = T)
 
 ### Data Cleaning
 
+In the data cleaning phase, the dataset comprised 75 variables, presenting a complexity that necessitated reduction for effective model fitting. Drawing upon insights gathered from the literature review, I meticulously chose over 30 variables deemed pertinent for predicting Airbnb's listing prices. The following table delineates a subset of these selected variables.
+
 ```{r echo=FALSE}
 listings_data <- listings |> 
   select(id, host_id, host_name, host_since, host_response_time, host_response_rate,
@@ -68,16 +76,26 @@ listings_data <- listings |>
          accommodates, bathrooms_text, bedrooms, beds, price, minimum_nights,
          maximum_nights, number_of_reviews, review_scores_rating, review_scores_accuracy,
          review_scores_cleanliness, review_scores_checkin, review_scores_communication,
-         review_scores_location, review_scores_value, instant_bookable, host_neighbourhood,)
+         review_scores_location, review_scores_value, instant_bookable, host_neighbourhood)
 ```
 
 ```{r echo=FALSE}
 kable(head(listings_data[,c(3,4,16:19,23)]))
 ```
 
+This is a summary of the dataset.
+
 ```{r echo=FALSE}
 summary(listings_data)
 ```
+
+Upon preliminary examination of the dataset, it becomes evident that the removal of missing values and outliers is imperative. Their presence could potentially skew the predictive accuracy of the model.
+
+For the **`price`** column, I removed all non-numeric characters and calculated the first quartile (Q1) and third quartile (Q3) of the column, as well as the interquartile (IQR). They are then used to define a range of outliers. Finally, the dataset is filtered to retain only the price values in this range.
+
+In the **`host_response_time`**, **`host_is_superhost`**, **`host_identity_verified`**, **`instant_bookable`**, **`bathrooms_text`**, and **`room_type`** columns, I converted categorical variables into numeric types, simultaneously filtering out rows containing NA values. This transformation not only streamlined the dataset but also enhanced its suitability for quantitative analysis and modeling.
+
+Regarding the **`host_response_rate`** column, I transformed percentage strings into numeric values, thereby standardizing the data format for more effective subsequent analyses.
 
 ```{r echo=FALSE}
 # Price
@@ -96,8 +114,6 @@ upper_bound <- Q3 + 1.5 * IQR
 listings_data <- listings_data |> filter(price >= lower_bound & price <= upper_bound)
 ```
 
-within an hour = 0, within a few hours = 1, a few days or more = 2.
-
 ```{r echo=FALSE}
 # Host response
 # Converts categorical variables to numeric types
@@ -111,16 +127,12 @@ listings_data <- listings_data |>
   filter(!is.na(host_response_time)) # Filter out rows with NA values
 ```
 
-f = 0, t = 1.
-
 ```{r echo=FALSE}
 # Host is superhost
 listings_data <- listings_data |> filter(host_is_superhost %in% c('f','t'))
 # Converts categorical variables to numeric types
 listings_data$host_is_superhost <- ifelse(listings_data$host_is_superhost == 'f', 0, 1)
 ```
-
-f = 0, t = 1.
 
 ```{r echo=FALSE}
 # Host identify verified
@@ -129,8 +141,6 @@ listings_data <- listings_data |> filter(host_identity_verified %in% c('f','t'))
 listings_data$host_identity_verified <- ifelse(listings_data$host_identity_verified == 'f',
                                                0, 1)
 ```
-
-f = 0, t = 1.
 
 ```{r echo=FALSE}
 # Instant bookable
@@ -177,8 +187,6 @@ listings_data <- listings_data |>
   select(-bathrooms_text)  # Remove the old bathrooms_text column
 ```
 
-Entire home/apt = 0, Private room = 1, Hotel room = 2.
-
 ```{r echo=FALSE}
 # Room type
 listings_data <- listings_data |> 
@@ -193,11 +201,11 @@ listings_data <- listings_data |>
   relocate(room, .after = room_type)
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-# write.csv(listings_data, "listings_data.csv")
-```
-
 ### EDA
+
+Following the completion of the data cleaning process, the subsequent phase involves conducting exploratory data analysis (EDA). This critical step will facilitate a deeper and more nuanced understanding of the dataset.
+
+Initially, to ascertain the linear relationships between various variables, I constructed a heatmap. This graphical representation elucidates the correlation coefficients among different variables, providing a visual overview of their interrelationships.
 
 ```{r fig.width=7,fig.height=6,echo=FALSE}
 # Heatmap
@@ -233,13 +241,11 @@ ggplot(data = melted_correlation, aes(Var1, Var2, fill = value)) +
       )
 ```
 
-rate那里无所谓，但是中间那一块感觉会存在共线性问题
+The heatmap analysis reveals that the **`price`** variable exhibits significant correlations with several factors, including **`host_is_superhost`**, **`room_type`**, **`accommodates`**, **`bathrooms`**, **`bedrooms`**, **`beds`**, **`minimum_nights`**, **`number_of_reviews`**, **`review_scores_ratings`**, and **`review_scores_location`**.
 
-另外，相关系数矩阵仅仅表示不同变量之间是否存在线性关系，但有时候关系有可能是非线性的。（比如地理位置和价格）
+However, it is crucial to note that the correlation matrix primarily reflects linear relationships between variables. In some instances, the associations might be non-linear, as exemplified by the relationship between **`price`** and geographical coordinates (**`latitude`** and **`longitude`**). Consistent with insights from existing literature, Airbnb's listing price is influenced by geographic location. Accordingly, incorporating **`latitude`** and **`longitude`** into the model building process is a critical step to capture these complex spatial dynamics.
 
-找找哪些因素和price相关，然后绘制图形：
-
-host_is_superhost, latitude and longitude, room_type, accommodates, bathrooms, bedrooms, beds, minimum_nights, number_of_reviews, review_scores_ratings, review_scores_location
+Before delving into the exploration of other variables, an initial analysis was conducted to examine the distribution of Airbnb's listing prices.
 
 ```{r echo=FALSE}
 # Price Distribution
@@ -674,7 +680,7 @@ qqnorm(resid(fit_partial_pooling), col = "#003566", main = "Q-Q Plot of Partial 
 qqline(resid(fit_partial_pooling), col = "#D62828")  # Add a guide line
 ```
 
-## Result Analysis and Discussion
+## Results Analysis and Discussion
 
 颜色越红，rmse越小
 
