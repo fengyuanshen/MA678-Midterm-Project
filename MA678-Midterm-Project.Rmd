@@ -245,7 +245,7 @@ The heatmap analysis reveals that the **`price`** variable exhibits significant 
 
 However, it is crucial to note that the correlation matrix primarily reflects linear relationships between variables. In some instances, the associations might be non-linear, as exemplified by the relationship between **`price`** and geographical coordinates (**`latitude`** and **`longitude`**). Consistent with insights from existing literature, Airbnb's listing price is influenced by geographic location. Accordingly, incorporating **`latitude`** and **`longitude`** into the model building process is a critical step to capture these complex spatial dynamics.
 
-Before delving into the exploration of other variables, an initial analysis was conducted to examine the distribution of Airbnb's listing prices.
+Before delving into the exploration of other variables, an initial analysis was conducted to examine the distribution of Airbnb's listing price.
 
 ```{r echo=FALSE}
 # Price Distribution
@@ -258,6 +258,10 @@ ggplot(listings_data, aes(x = price)) +
     plot.title = element_text(hjust = 0.5)
   )
 ```
+
+The histogram indicates a right-skewed distribution, with a high frequency of listings priced at the lower end of the spectrum, suggesting that budget-friendly options are more common in the market. Most listings in Los Angeles are priced under \$200, although there are also listings priced over \$400. Notably, there is a long tail extending towards the higher price range, highlighting the presence of premium-priced listings.
+
+Given the right-skewed distribution here, it is prudent to consider a logarithmic transformation of the price. This transformation aims to normalize the distribution, thereby satisfying one of the key assumptions of linear regression models which is the normality of the error terms.
 
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
 # Scatter plot of the relationship between location and price
@@ -280,6 +284,8 @@ ggmap(los_angeles_map) +
     plot.title = element_text(hjust = 0.5)
   )
 ```
+
+The geographic distribution map of Airbnb's listing prices in Los Angeles visualizes the variation in pricing across different locations, with a higher density of listings in central and coastal areas. A gradient in pricing is observed, with more expensive listings often clustered in specific neighborhoods, potentially reflecting the desirability or accessibility of these areas. Conversely, more affordable listings appear to be more dispersed throughout the city.
 
 ```{r echo=FALSE}
 # Room Type Distribution
