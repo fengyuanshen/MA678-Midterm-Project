@@ -591,7 +591,7 @@ The Residual Plot of the Linear Regression Model shows residuals scattered aroun
 
 The Q-Q Plot of the Linear Regression Model reveals some deviation from normality, particularly in the tails of the distribution, suggesting that the normality assumption may not fully hold. This could be due to outliers.
 
-### Model3: Linear Regression Model with Interaction Term
+### Model3: Linear Regression Model with Interaction Terms
 
 $$
 lm(log(price) = \alpha \\
@@ -836,7 +836,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - Complete Pooling",
+    title = "True Values vs Predictions - Complete Pooling Model",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
@@ -846,7 +846,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_po
     )
 ```
 
-### Linear Regression Model with Interaction Term
+### Linear Regression Model with Interaction Terms
 
 ```{r echo=FALSE}
 # Linear Regression Model with Interaction Term
@@ -867,7 +867,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions3), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - LR with Interaction",
+    title = "True Values vs Predictions - Linear Model with Interaction Terms",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
@@ -898,7 +898,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions4), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - No Pooling",
+    title = "True Values vs Predictions - No Pooling Model",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
@@ -929,7 +929,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions5), color = RMSE_per_po
                                     "#43AA8B", "#4D908E", "#577590", "#277DA1", "#014F86",
                                     "#023E8A", "#013A63", "#012A4A", "#03045E")) +
   labs(
-    title = "True Values vs Predictions - Partial Pooling",
+    title = "True Values vs Predictions - Partial Pooling Model",
     x = "True Value", y = "Predictions"
     ) +
   geom_abline(intercept = 0, slope = 1, color = "black", linewidth = 0.8) +
@@ -944,7 +944,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions5), color = RMSE_per_po
 model_comparison <- data.frame(
   Model = c("Null Model", 
             "Complete Pooling Model (Linear Regression)", 
-            "Linear Regression Model with Interaction Term", 
+            "Linear Regression Model with Interaction Terms", 
             "No Pooling Model", 
             "Partial Pooling Model"),
   RMSE = c(107.05792, 84.35703, 80.32188, 77.19066, 77.04541)
