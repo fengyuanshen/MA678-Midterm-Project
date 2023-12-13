@@ -5,18 +5,18 @@ author: "Fengyuan Shen (Vincent)"
 date: "2023-12-09"
 output: 
   pdf_document:
-    latex_engine: xelatex
+   latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,out.width="0.9\\linewidth",dev="pdf",fig.align  = 'center')
 ```
 
-## Abstract
+# Abstract
 
 This report conducts a data-driven analysis to forecast and understand the determinants of Airbnb listing prices in Los Angeles. With the rise of Airbnb as a significant player in the short-term rental market, this study provides a detailed examination of the factors influencing pricing strategies. It employs a robust statistical approach, starting from meticulous data cleaning to exploratory data analysis, and progresses to the development and comparison of multiple predictive models. The models range from simple linear regressions to more sophisticated partial pooling models, each analyzed for its predictive accuracy using the Root Mean Square Error (RMSE) metric. The findings are synthesized to reveal insights about the Los Angeles Airbnb market, contributing to the body of knowledge with practical analytical methodologies for pricing predictions in the sharing economy. The report's structured approach---from literature review to model evaluation---offers a clear narrative, making it a valuable resource for academics and practitioners interested in the economics of peer-to-peer accommodation platforms.
 
-## Introduction
+# Introduction
 
 Airbnb has revolutionized the landscape of short-term accommodation, presenting a flexible alternative to traditional hotel stays. Its emergence as a major player in the hospitality industry has prompted extensive research into its economic impact, regulatory challenges, and influence on local real estate markets.
 
@@ -24,7 +24,7 @@ This project aims to dissect and predict the pricing mechanisms of Airbnb listin
 
 The report is structured to walk the reader through the research process systematically. It begins with a literature review that sets the stage for understanding the current academic and practical perspectives on Airbnb. This is followed by a detailed description of the data preprocessing steps, ensuring the robustness of subsequent analyses. The main body of the report delves into exploratory data analysis, model building and validation, where each model's assumptions, strengths, and limitations are carefully examined. Finally, the report culminates in a discussion that synthesizes the findings, offering insights to the Airbnb market in Los Angeles.
 
-## Literature Review
+# Literature Review
 
 In recent years, the rise and development of Airbnb has had a profound impact on urban housing markets and community dynamics. Studies have shown that the distribution of Airbnb listings is influenced by a number of factors. Deboosere et al.[1] uses hedonic regression models to analyze Airbnb transactions in New York City. This study finds that locational factors, particularly transit accessibility, greatly influence listing prices and revenues. It also indicates a trend towards the professionalization of the short-term rental market, leading to increased revenue for a smaller segment of hosts and potentially displacing long-term residents in accessible neighborhoods.
 
@@ -32,7 +32,7 @@ According to a comprehensive review by Guttentag [2][3] of 132 peer-reviewed jou
 
 In summary, these studies highlight a variety of factors that can affect Airbnb's listing prices. These insights have informed the modeling and analysis in my project, which focuses on identifying and analyzing the factors that can impact the pricing of Airbnb listings. This involves examining how elements like location, socioeconomic status, and broader market trends.
 
-## Method
+# Method
 
 The initial dataset was segmented into ten distinct sections. To facilitate a comprehensive analysis, I consolidated these segments into a single dataset, subsequently named **`listings.csv`**.
 
@@ -70,7 +70,7 @@ library(knitr)
 listings <- read.csv("data/listings.csv", header = T)
 ```
 
-### Data Cleaning
+## Data Cleaning
 
 In the data cleaning phase, the dataset comprised 75 variables, presenting a complexity that necessitated reduction for effective model fitting. Drawing upon insights gathered from the literature review, I meticulously chose over 30 variables deemed pertinent for predicting Airbnb's listing prices. The following table delineates a subset of these selected variables.
 
@@ -207,7 +207,7 @@ listings_data <- listings_data |>
   relocate(room, .after = room_type)
 ```
 
-### EDA
+## EDA
 
 Following the completion of the data cleaning process, the subsequent phase involves conducting exploratory data analysis (EDA). This critical step will facilitate a deeper and more nuanced understanding of the dataset.
 
@@ -489,13 +489,13 @@ The scatter plots above analyze the relationship between Airbnb listing prices i
 
 As a result, given the visual trend of the overall and location rating, it is prudent to consider incorporating overall ratings and location-related ratings into the predictive model.
 
-### Fitting Model
+## Fitting Model
 
 Based on the insights garnered from the literature and EDA process, I decided to include the following variables as predictors in the model: **`host_is_superhost`**, **`room_type`**, **`accommodates`**, **`bathrooms`**, **`bedrooms`**, **`beds`**, **`minimum_nights`**, **`number_of_reviews`**, **`review_scores_ratings`**, **`review_scores_location`**, along with geographical coordinates **`latitude`** and **`longitude`**.
 
 Moving forward, to facilitate the validation of the model's predictive efficacy post-construction, I have partitioned the data into train set and test set. The model will be built on the train set, thereafter its performance will be assessed on the test set.
 
-#### Split the Dataset into train_data and test_data
+### Split the Dataset into train_data and test_data
 
 To ensure class balance within the dataset, I utilized the **`createDataPartition`** function from the **`caret`** package, which performs stratified sampling to maintain representative proportions of classes in both the train and test sets. I allocated 80% of the data for training purposes and reserved 20% for testing.
 
@@ -509,9 +509,9 @@ train_data <- listings_data[splitIndex, ]
 test_data <- listings_data[-splitIndex, ]
 ```
 
-#### Model1: Null Model
+### Model1: Null Model
 
-**lm(price \~ 1)**
+$$lm(Price = \alpha)$$
 
 ```{r echo=FALSE}
 fit_null <- lm(price ~ 1, data = train_data)
@@ -537,11 +537,27 @@ For the residual plot, I observe a very narrow vertical distribution of residual
 
 Based on the above analysis, I would say that the Null Model, without any predictors, is insufficient for explaining the variance in the Airbnb listing prices.
 
-#### Model2: Complete Pooling Model (Linear Regression)
+### Model2: Complete Pooling Model (Linear Regression)
 
 During the EDA process, it became evident that the distribution of listing prices was substantially right-skewed, with the majority of listings being lower-priced, while a minority were notably higher-priced. Given this skewed distribution, a linear model (LM) may not be the best choice because LM assumes that the response variables are approximately normally distributed. So I used a logarithmic transformation to process the response variable to make it closer to a normal distribution and thus fit a linear model.
 
-**lm(log(price) \~ host_is_superhost + latitude + longitude + room_type + accommodates + bathrooms + bedrooms + beds + minimum_nights + number_of_reviews + review_scores_rating + review_scores_location)**
+$$
+lm(log(price) = \alpha \\
++ \beta_1 \cdot host\_is\_superhost \\
++ \beta_2 \cdot latitude \\
++ \beta_3 \cdot longitude \\
++ \beta_4 \cdot room\_type \\
++ \beta_5 \cdot accommodates \\
+$$ $$
++ \beta_6 \cdot bathrooms \\
++ \beta_7 \cdot bedrooms \\
++ \beta_8 \cdot beds \\
++ \beta_9 \cdot minimum\_nights \\
++ \beta_{10} \cdot number\_of\_reviews \\
+$$ $$
++ \beta_{11} \cdot review\_scores\_rating \\
++ \beta_{12} \cdot review\_scores\_location)
+$$
 
 ```{r echo=FALSE}
 fit_lin <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
@@ -575,9 +591,29 @@ The Residual Plot of the Linear Regression Model shows residuals scattered aroun
 
 The Q-Q Plot of the Linear Regression Model reveals some deviation from normality, particularly in the tails of the distribution, suggesting that the normality assumption may not fully hold. This could be due to outliers.
 
-#### Model3: Linear Regression Model with Interaction Term
+### Model3: Linear Regression Model with Interaction Term
 
-**lm(log(price) \~ host_is_superhost + latitude + longitude + room_type + accommodates + bathrooms + bedrooms + beds + minimum_nights + number_of_reviews + review_scores_rating + review_scores_location + latitude:longitude + accommodates:bedrooms + review_scores_rating:review_scores_location)**
+$$
+lm(log(price) = \alpha \\
++ \beta_1 \cdot host\_is\_superhost \\
++ \beta_2 \cdot latitude \\
++ \beta_3 \cdot longitude \\
++ \beta_4 \cdot room\_type \\
++ \beta_5 \cdot accommodates \\
+$$ $$
++ \beta_6 \cdot bathrooms \\
++ \beta_7 \cdot bedrooms \\
++ \beta_8 \cdot beds \\
++ \beta_9 \cdot minimum\_nights \\
++ \beta_{10} \cdot number\_of\_reviews \\
+$$ $$
++ \beta_{11} \cdot review\_scores\_rating \\
++ \beta_{12} \cdot review\_scores\_location \\
++ \beta_{13} \cdot latitude*longitude \\
+$$ $$
++ \beta_{14} \cdot accommodates*bedrooms \\
++ \beta_{15} \cdot review\_scores\_rating*review\_scores\_location)
+$$
 
 ```{r echo=FALSE}
 fit_lin2 <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
@@ -610,9 +646,31 @@ This model retains many of the predictors from the previous model, with all vari
 
 The Residual Plot and Q-Q Plot show the similar pattern to the previous model. However, the adjusted R-squared value of 0.4766 represents a slight improvement over the previous model, explaining approximately 47.66% of the variability in the logarithmically transformed price. Therefore, the inclusion of interaction terms in the model did slghtly improve the model.
 
-#### Model4: No Pooling Model
+### Model4: No Pooling Model
 
-**lm(log(price) \~ host_is_superhost + latitude + longitude + room_type + accommodates + bathrooms + bedrooms + beds + minimum_nights + number_of_reviews + review_scores_rating + review_scores_location + latitude:longitude + accommodates:bedrooms + review_scores_rating:review_scores_location + factor(host_neighbourhood))**
+$$
+lm(log(price) = \alpha \\
++ \beta_1 \cdot host\_is\_superhost \\
++ \beta_2 \cdot latitude \\
++ \beta_3 \cdot longitude \\
++ \beta_4 \cdot room\_type \\
++ \beta_5 \cdot accommodates \\
+$$ $$
++ \beta_6 \cdot bathrooms \\
++ \beta_7 \cdot bedrooms \\
++ \beta_8 \cdot beds \\
++ \beta_9 \cdot minimum\_nights \\
++ \beta_{10} \cdot number\_of\_reviews \\
+$$ $$
++ \beta_{11} \cdot review\_scores\_rating \\
++ \beta_{12} \cdot review\_scores\_location \\
++ \beta_{13} \cdot latitude*longitude \\
+$$ $$
++ \beta_{14} \cdot accommodates*bedrooms \\
++ \beta_{15} \cdot review\_scores\_rating*review\_scores\_location \\
+$$ $$
++ factor(host\_neighbourhood))
+$$
 
 ```{r echo=FALSE}
 fit_no_pooling <- lm(log(price) ~ host_is_superhost + latitude + longitude + room_type + 
@@ -625,8 +683,8 @@ fit_no_pooling <- lm(log(price) ~ host_is_superhost + latitude + longitude + roo
 # Display summary of the coefficients with a limited number of coefficients
 coef_summary <- summary(fit_no_pooling)$coefficients
 
-# Print the first 17 coefficients
-print(coef_summary[1:17, ])
+# Print the first 23 coefficients
+print(coef_summary[1:23, ])
 
 # Print the specified summary statistics
 cat("\nResidual standard error: ", summary(fit_no_pooling)$sigma, " on ", 
@@ -660,9 +718,31 @@ The Q-Q Plot shows that the residuals are mostly aligned with the theoretical qu
 
 The model's adjusted R-squared of approximately 0.5552 suggests that over 55.52% of the variability in the logarithmically transformed price is explained by the model, marking an improvement in fit compared to the Complete Pooling Model.
 
-#### Model5: Partial Pooling Model
+### Model5: Partial Pooling Model
 
-**lmer(log(price) \~ host_is_superhost + latitude + longitude + room_type + accommodates + bathrooms + bedrooms + beds + minimum_nights + number_of_reviews + review_scores_rating + review_scores_location + latitude:longitude + accommodates:bedrooms + review_scores_rating:review_scores_location + (1 \| host_neighbourhood))**
+$$
+lm(log(price) = \alpha \\
++ \beta_1 \cdot host\_is\_superhost \\
++ \beta_2 \cdot latitude \\
++ \beta_3 \cdot longitude \\
++ \beta_4 \cdot room\_type \\
++ \beta_5 \cdot accommodates \\
+$$ $$
++ \beta_6 \cdot bathrooms \\
++ \beta_7 \cdot bedrooms \\
++ \beta_8 \cdot beds \\
++ \beta_9 \cdot minimum\_nights \\
++ \beta_{10} \cdot number\_of\_reviews \\
+$$ $$
++ \beta_{11} \cdot review\_scores\_rating \\
++ \beta_{12} \cdot review\_scores\_location \\
++ \beta_{13} \cdot latitude*longitude \\
+$$ $$
++ \beta_{14} \cdot accommodates*bedrooms \\
++ \beta_{15} \cdot review\_scores\_rating*review\_scores\_location \\
+$$ $$
++ (1 | host\_neighbourhood))
+$$
 
 ```{r echo=FALSE,warning=FALSE}
 fit_partial_pooling <- lmer(log(price) ~ host_is_superhost + latitude + longitude + 
@@ -698,13 +778,13 @@ For the fixed effects, it can be seen that the predictors like **`host_is_superh
 
 The random effects for **`host_neighborhood`** suggest that there is a significant variance in price that can be attributed to the neighborhood level, justifying the inclusion of random effects in the model.
 
-## Results Analysis
+# Results Analysis
 
 In the preceding analysis, I constructed five distinct models, each possessing unique strengths and weaknesses. To facilitate a more direct comparison of their predictive capabilities, I will deploy these models to forecast outcomes on the test set and compare the predictions against the actual values.
 
 The Root Mean Square Error (RMSE) for each model has been computed to quantify their prediction accuracy. Additionally, I have created scatter plots to visually represent the predictive performance of each model. This comparative approach will enable an assessment of which model most effectively captures the nuances of the data, thereby guiding the selection of the optimal model for further application.
 
-#### Null Model
+### Null Model
 
 ```{r echo=FALSE}
 # Null Model
@@ -735,7 +815,7 @@ ggplot(test_data, aes(x = price, y = test_predictions1, color = RMSE_per_point))
     )
 ```
 
-#### Complete Pooling Model (Linear Regression)
+### Complete Pooling Model (Linear Regression)
 
 ```{r echo=FALSE}
 # Complete Pooling
@@ -766,7 +846,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_po
     )
 ```
 
-#### Linear Regression Model with Interaction Term
+### Linear Regression Model with Interaction Term
 
 ```{r echo=FALSE}
 # Linear Regression Model with Interaction Term
@@ -797,7 +877,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions3), color = RMSE_per_po
     )
 ```
 
-#### No Pooling Model
+### No Pooling Model
 
 ```{r echo=FALSE}
 # No Pooling Model
@@ -828,7 +908,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions4), color = RMSE_per_po
     )
 ```
 
-#### Partial Pooling Model
+### Partial Pooling Model
 
 ```{r echo=FALSE}
 # Partial Pooling Model
@@ -888,19 +968,23 @@ The Partial Pooling Model appears to be the most accurate, as indicated by the d
 
 In conclusion, the detailed analysis points to the Partial Pooling Model as the most effective for predicting Airbnb's listing prices in Los Angeles, offering the best balance between complexity and accuracy.
 
-## Discussion and Limitation
+# Discussion and Limitation
 
 While the Partial Pooling Model is superior in terms of predictive accuracy, the choice of model may also depend on the specific application and the interpretability requirements. If the goal is to understand specific neighborhood effects, the No Pooling or Partial Pooling models would be more appropriate. If interpretability and simplicity are more critical, the Complete Pooling or Interaction models might be preferred, despite the slight sacrifice in prediction accuracy.
 
 These models also have some limitations, almost all the models are unduly influenced by outliers or points with high leverage that do not represent the general trend. Besides, some complex models, especially those with many predictors and interactions, are at risk of overfitting to the train data and may not generalize well to unseen data. What's more, as models become more complex, they often become harder to interpret. The Partial Pooling Model, for instance, can be difficult to explain to stakeholders without a statistical background.
 
-## Reference
+# Reference
 
-[1] *Deboosere, R., Kerrigan, D. J., Wachsmuth, D., & El-Geneidy, A. (2019). Location, location and professionalization: a multilevel hedonic analysis of Airbnb listing prices and revenue. Regional Studies, Regional Science, 6(1), 143-156.*
+[1] Deboosere, R., Kerrigan, D. J., Wachsmuth, D., & El-Geneidy, A. (2019). *Location, location and professionalization: a multilevel hedonic analysis of Airbnb listing prices and revenue.* Regional Studies, Regional Science, 6(1), 143-156.
 
-[2] *Jiao, J., & Bai, S. (2020). An empirical analysis of Airbnb listings in forty American cities. Cities, 99, 102618.*
+[2] Jiao, J., & Bai, S. (2020). *An empirical analysis of Airbnb listings in forty American cities.* Cities, 99, 102618.
 
-[3] *Guttentag, D. (2019). Progress on Airbnb: A literature review. Journal of Hospitality and Tourism Technology, 10(4)*
+[3] Guttentag, D. (2019). *Progress on Airbnb: A literature review.* Journal of Hospitality and Tourism Technology, 10(4)
+
+[4] Gelman, A., Hill, J., & Vehtari, A. (2020). *Regression and other stories.* Cambridge University Press.
+
+[5] Gelman, A., & Hill, J. (2006). *Data analysis using regression and multilevel/hierarchical models*. Cambridge university press.
 
 ```{r echo=FALSE}
 # # Get summary
