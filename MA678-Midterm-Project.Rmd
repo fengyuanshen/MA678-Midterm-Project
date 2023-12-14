@@ -784,7 +784,7 @@ In the preceding analysis, I constructed five distinct models, each possessing u
 
 The Root Mean Square Error (RMSE) for each model has been computed to quantify their prediction accuracy. Additionally, I have created scatter plots to visually represent the predictive performance of each model. This comparative approach will enable an assessment of which model most effectively captures the nuances of the data, thereby guiding the selection of the optimal model for further application.
 
-### Null Model
+## Null Model
 
 ```{r echo=FALSE}
 # Null Model
@@ -815,7 +815,7 @@ ggplot(test_data, aes(x = price, y = test_predictions1, color = RMSE_per_point))
     )
 ```
 
-### Complete Pooling Model (Linear Regression)
+## Complete Pooling Model (Linear Regression)
 
 ```{r echo=FALSE}
 # Complete Pooling
@@ -846,7 +846,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions2), color = RMSE_per_po
     )
 ```
 
-### Linear Regression Model with Interaction Terms
+## Linear Regression Model with Interaction Terms
 
 ```{r echo=FALSE}
 # Linear Regression Model with Interaction Term
@@ -877,7 +877,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions3), color = RMSE_per_po
     )
 ```
 
-### No Pooling Model
+## No Pooling Model
 
 ```{r echo=FALSE}
 # No Pooling Model
@@ -908,7 +908,7 @@ ggplot(test_data, aes(x = price, y = exp(test_predictions4), color = RMSE_per_po
     )
 ```
 
-### Partial Pooling Model
+## Partial Pooling Model
 
 ```{r echo=FALSE}
 # Partial Pooling Model
